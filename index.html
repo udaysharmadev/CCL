@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b211e">
+  <meta name="description" content="Play 3D arcade cricket across three grounds in Crazy Cricket League.">
+  <link rel="icon" type="image/svg+xml" href="./mark.svg">
+  <title>Crazy Cricket League</title>
+</head>
+<body>
+  <main id="game" class="game" data-view="home">
+    <div id="stadium" class="stadium" aria-label="3D cricket ground"></div>
+    <div class="shade" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <button id="home-button" class="brand" type="button" aria-label="Return to the stadium">
+        <img src="./mark.svg" alt="" width="41" height="41">
+        <span>CRAZY CRICKET <strong>LEAGUE</strong></span>
+      </button>
+      <div class="top-controls">
+        <div class="wallet" aria-label="Local career totals"><span><i class="coin" aria-hidden="true"></i><b id="coins">0</b></span><span><b id="xp">0</b> XP</span></div>
+        <button id="sound-button" class="utility" type="button" aria-pressed="true">Sound</button>
+        <div id="timing" class="timing" role="status" aria-label="Shot timing" hidden>
+          <div class="timing-caption"><span>TIMING</span><strong id="timing-result">WATCH THE BALL</strong></div>
+          <div class="timing-track"><i></i><b id="timing-needle"></b></div>
+          <div class="timing-labels"><span>EARLY</span><span>GOOD</span><span>PERFECT</span><span>GOOD</span><span>LATE</span></div>
+          <span id="shot-feedback" class="sr-only" aria-live="polite" hidden></span>
+        </div>
+        <button id="pause-button" class="utility" type="button" hidden><span id="pause-label">Pause</span> <kbd>Esc</kbd></button>
+      </div>
+    </header>
+
+    <section id="home" class="home" aria-labelledby="title">
+      <p class="eyebrow"><span></span> THE CROWD IS WAITING</p>
+      <h1 id="title">CRAZY<br>CRICKET<br><em>LEAGUE</em></h1>
+      <p class="tagline">One swipe. All the glory.</p>
+      <div class="home-actions">
+        <button id="solo-button" class="primary" type="button" aria-label="Play Solo Arcade" disabled><span>PLAY CRICKET</span><span aria-hidden="true">▶</span></button>
+        <button id="training-button" class="secondary" type="button" aria-label="Training Nets" disabled><span>Practice in the nets</span><span aria-hidden="true">→</span></button>
+        <div class="home-links">
+          <button id="setup-button" class="utility" type="button" disabled>Match setup</button>
+          <button id="lineup-button" class="utility" type="button" disabled>Dressing room</button>
+          <button id="six-button" class="utility" type="button" disabled>Longest Six</button>
+          <button id="online-button" class="utility" type="button" disabled>Online</button>
+          <button id="how-to-play" class="utility" type="button" disabled>How to play</button>
+          <button id="settings-button" class="utility" type="button" disabled>Settings</button>
+        </div>
+      </div>
+      <p id="loading" class="loading" role="status">Preparing the ground…</p>
+      <progress id="loading-progress" class="loading-progress" aria-label="Loading game"></progress>
+      <p id="career-summary" class="career-summary" hidden></p>
+    </section>
+    <footer id="venue" class="venue">
+      <div><strong>SUNCREST OVAL</strong><span>DAY MATCH <i></i> DRY PITCH</span></div>
+      <div class="edition"><span>01 / ARCADE SERIES</span><strong>2–20 OVERS PER SIDE</strong></div>
+    </footer>
+
+    <section id="scoreboard" class="scoreboard" aria-label="Match scoreboard" hidden>
+      <div class="broadcast-heading"><span><i></i> CCL • LIVE</span><span id="broadcast-match">SUNCREST v RIDGEBACKS</span><span id="score-rate">CRR 0.00</span></div>
+      <div class="score-main">
+        <span id="team-code" class="team-code">SUN</span>
+        <strong id="score" aria-live="polite">0/0</strong>
+        <span class="over"><b id="overs">0.0</b><small id="overs-limit"> / 2 OV</small></span>
+        <span id="chase" class="chase" hidden></span>
+        <span id="free-hit" class="free-hit" hidden>FREE HIT</span>
+      </div>
+      <div id="batter-strip" class="batter-strip"></div>
+      <div class="score-details">
+        <div id="score-stats" class="score-stats"></div>
+        <div id="ribbon" class="ribbon" aria-label="Recent deliveries"></div>
+      </div>
+      <div class="score-footer"><span id="score-context"></span><strong id="last-ball"></strong></div>
+    </section>
+    <button id="field-map-button" class="field-map-button" type="button" aria-label="View field and change field placement" hidden>
+      <svg id="field-map" viewBox="0 0 160 160" aria-hidden="true"></svg>
+      <span>LIVE FIELD <small>↗</small></span>
+    </button>
+    <div id="match-id" class="match-id" hidden><b>SOLO ARCADE</b><span>SUNCREST OVAL</span></div>
+
+    <section id="playfield" class="playfield" aria-label="Batting and bowling controls" hidden>
+      <svg id="swipe-trail" class="swipe-trail" aria-hidden="true"><line id="swipe-line"/><circle id="swipe-origin" r="7"/><circle id="swipe-tip" r="13"/></svg>
+      <div id="swipe-cue" class="swipe-cue"><svg viewBox="0 0 40 70" aria-hidden="true"><path d="M20 60V12M7 27L20 12L33 27"/></svg><b>SWIPE TO BAT</b><span>Drag to aim · release near the ball</span></div>
+      <div id="target-label" class="target-label" hidden></div>
+      <div id="countdown" class="countdown" hidden aria-live="polite"></div>
+      <div id="callout" class="callout" hidden aria-live="polite"><strong id="call-title"></strong><span id="call-detail"></span></div>
+      <button id="review-hint" class="review-hint" type="button" hidden>Send to the third umpire <small>V</small></button>
+    </section>
+
+    <div id="control-dock" class="control-dock" hidden>
+      <div id="bat-controls" class="bat-controls">
+        <span id="batting-mode" class="batting-mode">NORMAL • 360° SWIPE</span>
+        <div class="bat-tools">
+          <button id="loft-toggle" type="button" aria-pressed="false">↗ <span>LOFT</span></button>
+          <button id="defense-toggle" type="button" aria-pressed="false">◇ <span>DEFENSE</span></button>
+        </div>
+      </div>
+      <div id="bowl-controls" class="bowl-controls" hidden>
+        <div class="control-label"><span>DELIVERY SELECT</span><span>Set your line and effort</span></div>
+        <div id="deliveries" class="choices" aria-label="Bowling deliveries"></div>
+        <div id="bowl-sliders" class="sliders">
+          <label>Line <input id="line" type="range" min="-1.4" max="1.4" step="0.05" value="0" aria-label="Bowling line"><output id="line-label">Middle</output></label>
+          <label>Pace <input id="effort" type="range" min="0.15" max="1" step="0.01" value="0.67" aria-label="Bowling effort"><output id="effort-label">67%</output></label>
+        </div>
+        <div class="bowl-options">
+          <label class="bank">Bowling group <select id="delivery-bank">
+            <option value="0">Core deliveries</option><option value="1">Swing &amp; spin</option>
+          </select></label>
+        </div>
+      </div>
+      <button id="next-button" class="primary next" type="button" hidden>Next ball <span aria-hidden="true">→</span></button>
+    </div>
+    <section id="fielding-controls" class="fielding-controls" aria-label="Manual fielding controls" hidden>
+      <div class="fielding-caption"><b>FIELDING</b><span id="fielding-status" role="status"></span></div>
+      <svg id="live-field-control" viewBox="0 0 160 160" role="img" aria-label="Live field. Tap a player to select; tap the ground to move."></svg>
+      <p>Tap player → destination · or 1–9 + arrows</p>
+      <div class="fielding-actions">
+        <button id="fielding-chase" class="secondary" type="button">Chase ball <kbd>F</kbd></button>
+        <button id="throw-keeper" class="primary" type="button">Keeper end <kbd>Q</kbd></button>
+        <button id="throw-bowler" class="secondary" type="button">Bowler end <kbd>E</kbd></button>
+      </div>
+    </section>
+    <div id="duo-controls" class="duo-controls" hidden>
+      <span id="duo-role"></span>
+      <div class="run-tracks" aria-hidden="true"><i></i><i></i></div>
+      <button id="duo-swap" class="secondary" type="button">Swap control</button>
+      <button id="duo-run" class="secondary" type="button">Run!</button>
+      <button id="duo-wait" class="secondary" type="button">Wait!</button>
+      <button id="duo-no" class="secondary" type="button">No!</button>
+    </div>
+    <p id="phase-status" class="sr-only" aria-live="polite"></p>
+
+    <dialog id="overlay" class="overlay" aria-labelledby="overlay-title">
+      <p id="overlay-kicker" class="eyebrow"></p>
+      <h2 id="overlay-title"></h2>
+      <p id="overlay-text" class="overlay-text"></p>
+      <div id="overlay-scores" class="overlay-scores" hidden></div>
+      <div id="overlay-actions" class="overlay-actions"></div>
+      <div id="pause-tools" class="pause-tools" hidden>
+        <button id="match-settings" class="secondary" type="button">Settings</button>
+        <button id="scorecard-button" class="secondary" type="button">Scorecard</button>
+        <button id="auto-next" class="secondary" type="button" aria-pressed="true">Auto next ●</button>
+        <button id="replay-button" class="secondary replay" type="button" hidden>↺ Replay</button>
+      </div>
+    </dialog>
+    <dialog id="field-dialog" class="overlay field-dialog" aria-labelledby="field-title">
+      <p class="eyebrow">FIELD PLACEMENT</p><h2 id="field-title">Read the ground</h2>
+      <p id="field-help" class="overlay-text"></p>
+      <svg id="field-editor" viewBox="0 0 160 160" role="img" aria-label="Field placement. Select a numbered fielder, then tap a destination."></svg>
+      <label id="field-label" class="bank">Preset <select id="field-select"></select></label>
+      <label id="fielder-label" class="bank">Fielder <select id="fielder-select"></select></label>
+      <p id="field-notice" role="status"></p>
+      <button id="field-close" class="primary" type="button">Back to match</button>
+    </dialog>
+    <dialog id="setup-dialog" class="overlay" aria-labelledby="setup-title">
+      <p class="eyebrow">SOLO ARCADE</p>
+      <h2 id="setup-title">Match setup</h2>
+      <p id="setup-format" class="overlay-text"></p>
+      <form id="setup-form" class="setup-form">
+        <label>Overs per side <select id="setup-overs"></select></label>
+        <label>Ground <select id="setup-venue"></select></label>
+        <label>Pitch <select id="setup-pitch"></select></label>
+        <label>Weather <select id="setup-weather"></select></label>
+        <label>Field preset <select id="setup-field"></select></label>
+        <label>AI difficulty <select id="setup-difficulty"></select></label>
+        <label>Innings order <select id="setup-toss"></select></label>
+        <label>Running <select id="setup-running"></select></label>
+        <label>Fielding <select id="setup-fielding"></select></label>
+        <div class="setup-actions">
+          <button class="primary" type="submit">Start match →</button>
+          <button id="setup-cancel" class="secondary" type="button">Back</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="lineup-dialog" class="overlay lineup-dialog" aria-labelledby="lineup-title">
+      <p class="eyebrow">SUNCREST SQUAD</p>
+      <h2 id="lineup-title">Dressing room</h2>
+      <p class="overlay-text">Select your XI and set the batting order for Solo.</p>
+      <div class="lineup-lists">
+        <section aria-labelledby="lineup-count">
+          <h3 id="lineup-count" class="eyebrow"></h3>
+          <ol id="lineup-chosen"></ol>
+        </section>
+        <section aria-labelledby="bench-title">
+          <h3 id="bench-title" class="eyebrow">RESERVES</h3>
+          <ul id="lineup-bench"></ul>
+        </section>
+      </div>
+      <p id="lineup-status" class="overlay-text" role="status"></p>
+      <div class="setup-actions">
+        <button id="lineup-save" class="primary" type="button">Save XI</button>
+        <button id="lineup-cancel" class="secondary" type="button">Back</button>
+      </div>
+    </dialog>
+    <dialog id="drs-dialog" class="overlay drs-dialog" aria-labelledby="drs-title">
+      <p class="eyebrow">DECISION REVIEW SYSTEM</p>
+      <h2 id="drs-title">Third umpire</h2>
+      <div id="drs-body" class="drs-body"></div>
+      <p id="drs-detail" class="overlay-text"></p>
+      <div id="drs-actions" class="overlay-actions"></div>
+    </dialog>
+    <dialog id="how-to-play-dialog" class="overlay" aria-labelledby="how-to-play-title">
+      <p class="eyebrow">HOW TO PLAY</p>
+      <h2 id="how-to-play-title">Cricket in one swipe</h2>
+      <div class="guide">
+        <section><h3>Batting</h3><p>Hold anywhere on the pitch, drag, and release as the ball reaches the batter. Swipe up for a drive, diagonally to place the ball, sideways for a cut or pull, and down to play behind the wicket. Every direction is available. The longer and faster the swipe, the harder the shot. Tap RUN for one crossing; tap again to attempt another. Turn back returns to the previous crease. A keeper with the ball can run you out while you are short.</p></section>
+        <section><h3>Timing</h3><p>The bar above the pitch is the timing needle. Release as it crosses the middle for a perfect contact. The meter beside Pause holds your EARLY, GOOD, PERFECT or LATE result. Perfect contact gives a short vibration on supported devices.</p></section>
+        <section><h3>Shots</h3><p>Your swipe direction and ball height select the technique. Use <b>LOFT</b> (Shift) for aggressive aerial shots or <b>DEFENSE</b> (D) for softer, safer contact. Tap the active mode again to return to normal. <b>Space</b> plays straight.</p></section>
+        <section><h3>Bowling</h3><p>Pick a delivery, set the line and the pace, and choose a field. Extreme pace can send you over the line for a no ball.</p></section>
+        <section><h3>Manual fielding</h3><p>In Match setup choose Manual fielding. After the batter hits, select a numbered player on the live map and tap a destination. Chase ball (<b>F</b>) follows the interception. Once collected, throw to the keeper (<b>Q</b>) or bowler (<b>E</b>). Keyboard: <b>1–9</b> selects a fielder; arrow keys move on the map. Holding the ball gives the batters time to run.</p></section>
+        <section><h3>Running</h3><p>Press <b>R</b> to run and press it again to queue another. Press <b>C</b> to turn back and cancel. A run only counts when both batters reach the far crease, and a late run can end in a run out.</p></section>
+        <section><h3>The scorecard</h3><p>Open <b>Pause → Scorecard</b> for the full card: batters, bowlers, extras, partnerships and fall of wickets.</p></section>
+      </div>
+      <div class="setup-actions"><button id="how-to-play-close" class="secondary" type="button">Got it</button></div>
+    </dialog>
+    <dialog id="settings-dialog" class="overlay" aria-labelledby="settings-title">
+      <p class="eyebrow">SETTINGS</p>
+      <h2 id="settings-title">Settings</h2>
+      <div class="setup-form">
+        <label>Sound <input id="setting-sound" type="checkbox" checked></label>
+        <label>Reduced motion <input id="setting-motion" type="checkbox"></label>
+        <label>Show the timing needle <input id="setting-needle" type="checkbox" checked></label>
+        <label>Graphics <select id="setting-quality"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+        <label>Batting timing <select id="setting-difficulty"><option value="relaxed">Relaxed</option><option value="standard">Standard</option><option value="precise">Precise</option></select></label>
+      </div>
+      <div class="setup-actions"><button id="settings-close" class="secondary" type="button">Close</button></div>
+    </dialog>
+    <dialog id="scorecard-dialog" class="overlay scorecard-dialog" aria-labelledby="scorecard-title">
+      <header class="scorecard-header"><div><p class="eyebrow">MATCH CENTRE</p><h2 id="scorecard-title">Match scorecard</h2></div><button id="scorecard-close" class="secondary" type="button">Back</button></header>
+      <div id="scorecard-body" class="scorecard-body"></div>
+    </dialog>
+    <dialog id="online-dialog" class="overlay" aria-labelledby="online-title">
+      <p class="eyebrow">MULTIPLAYER</p>
+      <h2 id="online-title">Online play</h2>
+      <p class="overlay-text">Find a five-over opponent or invite a friend to a private match.</p>
+      <div class="overlay-actions">
+        <button id="quick-online" class="primary" type="button">Quick 1v1</button>
+        <label class="online-field">Private overs <input id="private-overs" type="number" min="2" max="20" value="5" inputmode="numeric"></label>
+        <button id="create-duo" class="secondary" type="button">Duo Batting · bat together vs AI</button>
+        <button id="create-online" class="secondary" type="button">Create private room</button>
+        <label class="online-field">Room code <input id="join-code" type="text" maxlength="12" autocomplete="off" spellcheck="false"></label>
+        <button id="join-online" class="secondary" type="button">Join private room</button>
+        <button id="close-online" class="secondary" type="button">Back</button>
+      </div>
+    </dialog>
+    <noscript><p class="noscript">Enable JavaScript to play Crazy Cricket League.</p></noscript>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

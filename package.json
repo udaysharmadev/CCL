@@ -1,0 +1,38 @@
+{
+  "name": "crazy-cricket-league",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18.0" },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.ts",
+    "test:browser": "node scripts/browser-smoke.ts",
+    "test:phase2": "node scripts/phase2-browser.ts",
+    "test:online": "node scripts/online-browser.ts",
+    "test:six": "node scripts/six-browser.ts",
+    "test:duo": "node scripts/duo-browser.ts",
+    "test:running": "node scripts/running-browser.ts",
+    "test:swipe": "node scripts/swipe-browser.ts",
+    "test:hud": "node scripts/hud-browser.ts",
+    "test:fielding": "node scripts/fielding-browser.ts",
+    "test:batting": "node scripts/batting-browser.ts",
+    "test:runout": "node scripts/runout-browser.ts",
+    "spike:authority": "node scripts/authority-spike.ts",
+    "online": "node scripts/online-server.ts"
+  },
+  "dependencies": {
+    "three": "0.185.1",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/three": "0.185.4",
+    "@types/ws": "8.18.1",
+    "playwright-core": "1.64.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.7"
+  }
+}
