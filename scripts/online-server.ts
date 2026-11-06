@@ -10,11 +10,12 @@ import { battingStyle } from '../src/players.ts'
 import { once } from 'node:events'
 import { WebSocket, WebSocketServer } from 'ws'
 import { DELIVERIES, DT, Delivery, FIELD_PRESETS, SHOTS, type DeliveryOptions, type FieldPreset } from '../src/cricket.ts'
+import { DeliveryReplay, deliveryCommands } from '../src/delivery-replay.ts'
 import { applyDelivery, newInnings, RULE_PROFILE, WICKETS_PER_INNINGS, outsideLimit, bowlerIndex, type Innings } from '../src/rules.ts'
 import {
   MAX_PRIVATE_OVERS, MIN_PRIVATE_OVERS, ONLINE_PATH, ONLINE_PORT, ONLINE_WINDUP_MS, QUICK_OVERS,
   type OnlineClientMessage, type OnlineIntent, type OnlineMode, type OnlinePhase, type OnlineRejectCode,
-  type OnlineReplay, type OnlineResult, type OnlineScore, type OnlineSeat, type OnlineServerMessage, type OnlineSnapshot,
+  type OnlineDeliveryCommand, type OnlineReplay, type OnlineResult, type OnlineScore, type OnlineSeat, type OnlineServerMessage, type OnlineSnapshot,
 } from '../src/online-contract.ts'
 
 const HOST = '127.0.0.1'
@@ -41,8 +42,8 @@ type Ball = {
   options: DeliveryOptions
   releaseAt: number
   sim: Delivery | null
-  shot: OnlineReplay['shot']
-  runs?: { tick: number; running: boolean }[]
+  version: 2
+  commands: readonly OnlineDeliveryCommand[]
 }
 
 type Room = {
@@ -174,6 +175,17 @@ function scoreView({ history, target, ...score }: Innings): OnlineScore {
   return { ...score, target: target ?? null, recent: history.slice(-6) }
 }
 
+function replayView(ball: Ball): OnlineReplay {
+  const swing = ball.commands.find((command) => command.type === 'swing')
+  const runs = ball.commands.filter((command) => command.type === 'running')
+    .map(({ tick, running }) => ({ tick, running }))
+  return {
+    version: 2, options: ball.options, commands: ball.commands,
+    shot: swing ? { tick: swing.tick, input: swing.input } : null,
+    ...(runs.length ? { runs } : {}),
+  }
+}
+
 function allowLocalOrigin(origin: string) {
   if (!origin) return true
   try {
@@ -261,18 +273,14 @@ export async function startOnlineServer({
         member.disconnectedUntil ??= clock() + MATCH_GRACE_MS
       }
     }
-    if (saved.ball?.sim) {
-      const tick = saved.ball.sim.tick
-      const sim = new Delivery(saved.ball.options)
-      const shot = saved.ball.shot
-      while (sim.tick < tick && !sim.outcome) {
-        if (shot?.tick === sim.tick) sim.swing(shot.input)
-        for (const control of saved.ball.runs ?? []) if (control.tick === sim.tick) sim.setRunning(control.running)
-        sim.step()
-      }
-      if (shot?.tick === sim.tick && sim.swingTick === null) sim.swing(shot.input)
-      for (const control of saved.ball.runs ?? []) if (control.tick === sim.tick) sim.setRunning(control.running)
-      saved.ball.sim = sim
+    if (saved.ball) {
+      const ball = saved.ball
+      // Unversioned saves have no cross-type sequence: migrate their historical
+      // shot-before-runs ordering once. Keep already sealed events unchanged.
+      const commands = deliveryCommands(ball as Ball | OnlineReplay)
+      const replay = new DeliveryReplay({ options: ball.options, version: 2, commands })
+      if (ball.sim && !replay.advanceTo(ball.sim.tick)) throw new Error('Could not reconstruct accepted delivery')
+      saved.ball = { options: ball.options, releaseAt: ball.releaseAt, version: 2, commands, sim: ball.sim ? replay.sim : null }
     }
     rooms.set(saved.id, saved)
   }
@@ -288,7 +296,7 @@ export async function startOnlineServer({
 
   function state(room: Room, now: number): OnlineSnapshot {
     const ball = room.ball
-    const active = ball?.sim ? { runs: ball.runs, options: ball.options, shot: ball.shot, tick: ball.sim.tick, phase: ball.sim.phase } : null
+    const active = ball?.sim ? { ...replayView(ball), tick: ball.sim.tick, phase: ball.sim.phase } : null
     return {
       duoSwap: room.mode === 'duo' ? room.duoSwap : undefined,
       partnerCall: room.partnerCall && now - room.partnerCall.at < 2500
@@ -364,7 +372,7 @@ export async function startOnlineServer({
       room.battingSeat = room.duoOwners[room.score.striker]
     }
     const canonical = room.score.history.at(-1) ?? outcome
-    const replay: OnlineReplay = { options: ball.options, shot: ball.shot, ...(ball.runs?.length ? { runs: ball.runs } : {}) }
+    const replay = replayView(ball)
     const event = { delivery: room.delivery, innings: room.innings, outcome: canonical, replay }
     const checksum = createHash('sha256').update(JSON.stringify(event)).digest('hex')
     room.last = { ...event, checksum }
@@ -440,7 +448,7 @@ export async function startOnlineServer({
     if (!ball) return
     let released = false
     if (!ball.sim && now >= ball.releaseAt) {
-      ball.sim = new Delivery(ball.options)
+      ball.sim = new DeliveryReplay(ball).sim
       room.phase = 'flight'
       released = true
     }
@@ -469,10 +477,9 @@ export async function startOnlineServer({
     if (intent.type === 'running') {
       if (room.battingSeat !== index) return 'wrong-seat'
       const ball = room.ball
-      if ((ball?.runs?.length ?? 0) >= 64) return 'rate-limit'
+      if ((ball?.commands.filter((command) => command.type === 'running').length ?? 0) >= 64) return 'rate-limit'
       if (!ball?.sim?.setRunning(intent.running)) return 'wrong-phase'
-      ball.runs ??= []
-      ball.runs.push({ tick: ball.sim.tick, running: intent.running })
+      ball.commands = [...ball.commands, { type: 'running', tick: ball.sim.tick, seq: intent.seq, running: intent.running }]
       return
     }
     if (intent.type === 'bowl') {
@@ -489,7 +496,7 @@ export async function startOnlineServer({
           pitchWear: Math.min(1, room.score.legalBalls / 96),
           runnerPace: runnerPace(room, other(index)),
         },
-        releaseAt: now + ONLINE_WINDUP_MS, sim: null, shot: null,
+        releaseAt: now + ONLINE_WINDUP_MS, sim: null, version: 2, commands: [],
       }
       room.phase = 'windup'
       return
@@ -498,18 +505,21 @@ export async function startOnlineServer({
     if (room.phase !== 'flight' || !ball?.sim) return 'wrong-phase'
     if (index !== room.battingSeat) return 'wrong-seat'
     const input = { kind: intent.kind, aim: intent.aim, power: intent.power }
-    if (ball.shot) return 'swing-closed'
+    if (ball.commands.some((command) => command.type === 'swing')) return 'swing-closed'
     const socket = room.seats[index]?.socket
     const rtt = socket ? clients.get(socket)?.rtt ?? 0 : 0
     const lagTicks = Math.floor(Math.min(MAX_INPUT_GRACE_MS, rtt) / STEP_MS)
     const receiptTick = Math.floor((now - ball.releaseAt) / STEP_MS)
     const acceptedTick = Math.max(0, receiptTick - lagTicks)
-    const candidate = lagTicks ? new Delivery(ball.options) : ball.sim
-    while (candidate.tick < acceptedTick && !candidate.outcome) candidate.step()
-    if (candidate.tick !== acceptedTick || !candidate.swing(input)) return 'swing-closed'
-    ball.shot = { tick: acceptedTick, input }
-    while (candidate.tick < receiptTick && !candidate.outcome) candidate.step()
-    ball.sim = candidate
+    const candidate = new DeliveryReplay({
+      options: ball.options, version: 2,
+      commands: [...ball.commands, { type: 'swing', tick: acceptedTick, seq: intent.seq, input }],
+    })
+    // Rebuild the whole accepted history, including runs before and after the
+    // backdated swing. Commit only if every command through receipt still applies.
+    if (!candidate.advanceTo(receiptTick)) return 'swing-closed'
+    ball.commands = candidate.commands
+    ball.sim = candidate.sim
   }
 
   server.on('connection', (socket) => {
@@ -626,7 +636,7 @@ export async function startOnlineServer({
               bowler: 'AI attack',
               pitchWear: Math.min(1, room.score.legalBalls / 96),
               runnerPace: runnerPace(room, room.battingSeat ?? 0),
-            }, releaseAt: now + ONLINE_WINDUP_MS, sim: null, shot: null }
+            }, releaseAt: now + ONLINE_WINDUP_MS, sim: null, version: 2, commands: [] }
             room.phase = 'windup'
             room.partnerCall = undefined
           }

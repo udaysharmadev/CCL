@@ -15,6 +15,7 @@ import { type RoomSettings } from './match-data.ts'
 import { DEFAULT_SETTINGS, getLineup, getSettings, isBowler, setupMenus, type SoloSettings } from './setup.ts'
 import { connectOnline, rememberedRoom, roomCode, type OnlineConnectionStatus } from './online-client.ts'
 import { ONLINE_WINDUP_MS, type OnlineHandshake, type OnlineSeat, type OnlineSnapshot } from './online-contract.ts'
+import { DeliveryReplay } from './delivery-replay.ts'
 
 import { newSixChallenge, scoreSix, SIX_ATTEMPTS, type SixChallenge } from './six-challenge.ts'
 import { applyReview, DISMISSAL_LABELS } from './laws.ts'
@@ -99,6 +100,12 @@ type Phase = StadiumFrame['phase']
 type Career = { coins: number; xp: number }
 type RecordedShot = { tick: number; input: ShotInput }
 type Replay = { fielding?: readonly { tick: number; command: FieldingCommand }[]; runs?: readonly { tick: number; running: boolean }[]; options: DeliveryOptions; shot?: RecordedShot; signal?: StadiumFrame['signal'] }
+type DrsState = {
+  reviewsLeft: number
+  pendingOutcome?: DeliveryOutcome
+  pendingRecord?: Replay
+  reviewDeadline: number
+}
 type Match = {
   seed: number
   first: Innings
@@ -106,6 +113,7 @@ type Match = {
   playerBatsFirst: boolean
   settings: SoloSettings
   lineup: string[]
+  drs: DrsState
   reward?: Career
   saved?: boolean
 }
@@ -159,9 +167,24 @@ let onlineSwingSent = false
 let onlineWindupEnd = 0
 let onlineSnapshotAt = 0
 let onlineNotice = ''
-let pendingOutcome: DeliveryOutcome | undefined
-let reviewDeadline = 0
-let reviewsLeft = 2
+let onlineReplay: DeliveryReplay | undefined
+let onlineHistory = ''
+let onlineContactPlayed = false
+
+/** A local match owns its reviews; the allowance renews for each innings. */
+function newDrsState(): DrsState {
+  return { reviewsLeft: 2, reviewDeadline: 0 }
+}
+
+function clearReviewPresentation() {
+  ui.reviewHint.hidden = true
+  ui.reviewHint.textContent = ''
+  ui.drsDialog.close()
+  ui.drsTitle.textContent = ''
+  ui.drsBody.replaceChildren()
+  ui.drsDetail.textContent = ''
+  ui.drsActions.replaceChildren()
+}
 
 function loadCareer(): Career {
   try {
@@ -342,8 +365,9 @@ function start(mode: 'solo' | 'training' | 'six', settings = mode === 'solo' ? g
     seed, first: newInnings(mode === 'training' ? 1 : settings.overs, undefined,
       settings.toss === 'bat' ? getLineup() : OPPONENT_NAMES),
     playerBatsFirst: settings.toss === 'bat', settings, lineup: getLineup(),
+    drs: newDrsState(),
   }
-  reviewsLeft = 2
+  clearReviewPresentation()
   stadium?.setConditions(settings)
   paused = false
   replaying = false
@@ -384,6 +408,7 @@ function home() {
   setGameplay(false)
   view = 'home'
   match = undefined
+  clearReviewPresentation()
   live = undefined
   record = undefined
   lastReplay = undefined
@@ -535,20 +560,15 @@ function outcomeSignal(outcome: DeliveryOutcome): StadiumFrame['signal'] {
 }
 
 function drawOnlineBall(tick: number, audioEnabled = true) {
-  if (!live || !record) return
-  const shot = record.shot
-  while (live.tick < tick && !live.outcome) {
-    if (shot?.tick === live.tick) live.swing(shot.input)
-    for (const control of record.runs ?? []) if (control.tick === live.tick) live.setRunning(control.running)
-    live.step()
-    if (audioEnabled && live.contactEventTick === live.tick && live.phase === 'field') {
+  if (!live || !record || !onlineReplay) return
+  const valid = onlineReplay.advanceTo(Math.max(tick, live.tick), (sim) => {
+    if (audioEnabled && !onlineContactPlayed && sim.contactEventTick === sim.tick && sim.phase === 'field') {
+      onlineContactPlayed = true
       sound('contact')
       if (!isBowling()) showTiming()
     }
-  }
-  if (shot?.tick === live.tick && live.swingTick === null) live.swing(shot.input)
-  // Running commands are consumed once in the stepped loop above. Applying
-  // a command again on each drawn frame would queue extra manual runs.
+  })
+  if (!valid) throw new Error('Invalid authoritative delivery history')
   if (phase === 'flight' && live.phase === 'field') setPhase('field')
 }
 
@@ -733,6 +753,7 @@ function syncOnline(state: OnlineSnapshot, seat: OnlineSeat) {
       onlineSwingSent = false
       live = undefined
       record = undefined
+      onlineReplay = undefined
       signal = undefined
       pointer = undefined
       ui.timingResult.textContent = 'WATCH THE BALL'
@@ -742,26 +763,23 @@ function syncOnline(state: OnlineSnapshot, seat: OnlineSeat) {
     onlineWindupEnd = performance.now() + (state.windupRemainingMs ?? ONLINE_WINDUP_MS)
   } else if (state.active) {
     const active = state.active
-    const newBall = !live || !record || onlineBall !== state.delivery
+    const newBall = !live || !record || !onlineReplay || onlineBall !== state.delivery
     if (newBall) {
       onlineBall = state.delivery
       onlineNotice = ''
       onlineSwingSent = Boolean(active.shot)
-      live = new Delivery(active.options)
-      record = { options: active.options }
+      onlineContactPlayed = false
       ui.needle.style.setProperty('--timing', '0%')
       setPhase('flight')
       sound('release')
       mark('firstRelease')
     }
-    if (active.shot && record && !record.shot) {
-      if (live && active.shot.tick < live.tick) live = new Delivery(active.options)
-      record.shot = active.shot
-    }
-    if (record && active.runs && active.runs.length !== (record.runs?.length ?? 0)) {
-      const latest = active.runs.at(-1)
-      if (live && latest && latest.tick < live.tick) live = new Delivery(active.options)
-      record.runs = active.runs
+    const history = JSON.stringify(active.version === 2 ? active.commands : [active.shot, active.runs])
+    if (newBall || history !== onlineHistory) {
+      onlineHistory = history
+      onlineReplay = new DeliveryReplay(active)
+      live = onlineReplay.sim
+      record = { options: active.options, shot: active.shot ?? undefined, runs: active.runs }
     }
     onlineSnapshotAt = performance.now()
     drawOnlineBall(active.tick)
@@ -773,7 +791,8 @@ function syncOnline(state: OnlineSnapshot, seat: OnlineSeat) {
 function presentOnlineOutcome(last: NonNullable<OnlineSnapshot['last']>) {
   onlineResolvedBall = last.delivery
   onlineNotice = ''
-  live = new Delivery(last.replay.options)
+  onlineReplay = new DeliveryReplay(last.replay)
+  live = onlineReplay.sim
   record = { options: last.replay.options, shot: last.replay.shot ?? undefined, runs: last.replay.runs }
   drawOnlineBall(720, false)
   if (!isBowling()) showTiming(false)
@@ -800,6 +819,9 @@ function showOnlineStatus(status: OnlineConnectionStatus) {
 
 function startOnline(handshake: OnlineHandshake) {
   if (network) network.stop(false)
+  // Online decisions belong to the server, never to an abandoned local match.
+  match = undefined
+  clearReviewPresentation()
   enableAudio()
   ui.onlineMenu.close()
   onlineState = undefined
@@ -835,10 +857,12 @@ function settleBall(outcome: DeliveryOutcome) {
   // A dismissal can be sent to the third umpire before the score is recorded.
   // The offer is brief and never blocks the game.
   if (!replaying && reviewable(outcome)) {
-    pendingOutcome = outcome
-    reviewDeadline = performance.now() + 6000
+    const drs = match.drs
+    drs.pendingOutcome = outcome
+    drs.pendingRecord = record
+    drs.reviewDeadline = performance.now() + 6000
     ui.reviewHint.hidden = false
-    ui.reviewHint.textContent = `Send to the third umpire · ${reviewsLeft} left  V`
+    ui.reviewHint.textContent = `Send to the third umpire · ${drs.reviewsLeft} left  V`
     refreshPending = true
     return
   }
@@ -848,34 +872,44 @@ function settleBall(outcome: DeliveryOutcome) {
 /** Whether the decision on this delivery can be reviewed. */
 function reviewable(outcome: DeliveryOutcome) {
   if (view === 'online' || isBowling() || paused) return false
-  if (reviewsLeft <= 0) return false
+  if (!match || match.drs.reviewsLeft <= 0) return false
   return outcome.wicket === 'lbw' || (outcome.wicket === 'caught' && outcome.contact === 'edge')
 }
 
 /** The offer has run out, so the decision stands and the score is recorded. */
 function expireReview() {
-  const outcome = pendingOutcome
-  pendingOutcome = undefined
+  const drs = match?.drs
+  if (!drs) return
+  const outcome = drs.pendingOutcome
+  const pendingRecord = drs.pendingRecord
+  drs.pendingOutcome = undefined
+  drs.pendingRecord = undefined
+  drs.reviewDeadline = 0
   ui.reviewHint.hidden = true
-  if (outcome) applyOutcome(outcome)
+  if (outcome && pendingRecord === record && view !== 'online') applyOutcome(outcome)
 }
 
 function resolveReview(review: boolean) {
-  const outcome = pendingOutcome
-  pendingOutcome = undefined
+  const drs = match?.drs
+  if (!drs) return
+  const outcome = drs.pendingOutcome
+  const pendingRecord = drs.pendingRecord
+  drs.pendingOutcome = undefined
+  drs.pendingRecord = undefined
+  drs.reviewDeadline = 0
   ui.reviewHint.hidden = true
-  if (!outcome) return
+  if (!outcome || !pendingRecord || pendingRecord !== record || view === 'online') return
   if (!review) {
     applyOutcome(outcome)
     return
   }
   // An umpire's call does not spend the review. The score is recorded when the
   // player closes the third umpire's report.
-  if (!runThirdUmpire(outcome)) reviewsLeft--
+  if (!runThirdUmpire(outcome, drs, pendingRecord)) drs.reviewsLeft--
 }
 
 /** Show the third umpire's report. Returns whether the review is kept. */
-function runThirdUmpire(outcome: DeliveryOutcome): boolean {
+function runThirdUmpire(outcome: DeliveryOutcome, drs: DrsState, reviewRecord: Replay): boolean {
   const tracking = live?.lbw?.tracking
   const rows: [string, string][] = []
   let reviewed: 'out' | 'not-out' = outcome.wicket ? 'out' : 'not-out'
@@ -922,7 +956,12 @@ function runThirdUmpire(outcome: DeliveryOutcome): boolean {
   close.type = 'button'
   close.className = 'primary'
   close.textContent = 'Continue'
+  let continued = false
   close.addEventListener('click', () => {
+    // A detached/queued report action must not score into another match,
+    // innings or delivery, or commit the same decision twice.
+    if (continued || match?.drs !== drs || record !== reviewRecord || view === 'online') return
+    continued = true
     ui.drsDialog.close()
     applyOutcome(final)
   })
@@ -1035,7 +1074,8 @@ function afterBall() {
       { label: chasing ? 'Start the chase' : 'Take the field', run: () => {
         if (!match) return
         match.second = newInnings(innings.overs, target, match.playerBatsFirst ? OPPONENT_NAMES : match.lineup)
-        reviewsLeft = 2
+        match.drs = newDrsState()
+        clearReviewPresentation()
         live = undefined
         record = undefined
         lastReplay = undefined
@@ -1408,8 +1448,8 @@ function frame(now: number) {
       }
     }
   }
-  if (pendingOutcome && now > reviewDeadline) expireReview()
-  if (view !== 'home' && view !== 'online' && !paused && !replaying && !isBowling() && phase === 'dead' && !pendingOutcome && !currentInnings()?.complete && autoNext) {
+  if (match?.drs.pendingOutcome && now > match.drs.reviewDeadline) expireReview()
+  if (view !== 'home' && view !== 'online' && !paused && !replaying && !isBowling() && phase === 'dead' && !match?.drs.pendingOutcome && !currentInnings()?.complete && autoNext) {
     if (elapsed >= 4.5 && !stadium?.boundaryPlaying()) beginBall()
     else ui.next.textContent = stadium?.boundaryPlaying() ? 'Watching the boundary…' : `Next ball · ${Math.max(1, Math.ceil(4.5 - elapsed))}`
   }
@@ -1678,7 +1718,7 @@ document.addEventListener('keydown', (event) => {
     const button = event.code === 'KeyR' ? ui.duoRun : event.code === 'KeyC' ? ui.duoNo : event.code === 'KeyW' ? ui.duoWait : undefined
     if (button) { event.preventDefault(); button.click(); return }
   }
-  if (event.code === 'KeyV' && pendingOutcome) {
+  if (event.code === 'KeyV' && match?.drs.pendingOutcome) {
     event.preventDefault()
     resolveReview(true)
     return
@@ -1726,7 +1766,7 @@ ui.autoNext.addEventListener('click', () => {
   ui.autoNext.setAttribute('aria-pressed', String(autoNext))
   ui.autoNext.textContent = `Auto next ${autoNext ? '●' : '○'}`
 })
-ui.reviewHint.addEventListener('click', () => { if (pendingOutcome) resolveReview(true) })
+ui.reviewHint.addEventListener('click', () => { if (match?.drs.pendingOutcome) resolveReview(true) })
 ui.scorecardButton.addEventListener('click', () => {
   if (view === 'home') return
   paused = true

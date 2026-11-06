@@ -6,6 +6,7 @@ import { on, once } from 'node:events'
 import { test } from 'node:test'
 import { WebSocket } from 'ws'
 import { Delivery, DT } from '../src/cricket.ts'
+import { DeliveryReplay } from '../src/delivery-replay.ts'
 import { DEFAULT_LINEUP } from '../src/match-data.ts'
 import { ONLINE_WINDUP_MS, type OnlineServerMessage, type OnlineSnapshot, type OnlineReplay } from '../src/online-contract.ts'
 import { applyDelivery, newInnings } from '../src/rules.ts'
@@ -50,14 +51,10 @@ async function peer(url: string) {
 }
 
 function replay(record: OnlineReplay) {
-  const sim = new Delivery(record.options)
-  for (let tick = 0; tick < 900 && !sim.outcome; tick++) {
-    if (record.shot?.tick === sim.tick) sim.swing(record.shot.input)
-    for (const control of record.runs ?? []) if (control.tick === sim.tick) sim.setRunning(control.running)
-    sim.step()
-  }
-  assert.ok(sim.outcome)
-  return sim.outcome
+  const replay = new DeliveryReplay(record)
+  assert.ok(replay.advanceTo(900), 'accepted command history must replay successfully')
+  assert.ok(replay.sim.outcome)
+  return replay.sim.outcome
 }
 
 test('Duo shares one innings with legal strike ownership, tactical calls, running replay, reconnect and rematch', async (t) => {
@@ -68,7 +65,7 @@ test('Duo shares one innings with legal strike ownership, tactical calls, runnin
   peers[0].send({ type: 'create-duo', overs: 2 })
   const session = await peers[0].session()
   peers[1].send({ type: 'join', room: session.room })
-  await peers[1].session()
+  const partnerSession = await peers[1].session()
   for (const client of peers) {
     client.send({ type: 'approve', version: 1, lineup: DEFAULT_LINEUP })
     await client.ack()
@@ -151,6 +148,23 @@ test('Duo shares one innings with legal strike ownership, tactical calls, runnin
   assert.equal(state.firstInnings, null)
   assert.equal(state.result?.reason, 'duo')
   assert.deepEqual(state.wallets, [{ coins: 15, xp: 40 }, { coins: 15, xp: 40 }])
+  const completed = state
+  const sessions = [session, partnerSession]
+  for (const seat of [0, 1] as const) {
+    await peers[seat].close()
+    const disconnected = await peers[seat === 0 ? 1 : 0].state((state) =>
+      state.phase === 'complete' && !state.connected[seat] && state.revision > completed.revision)
+    peers[seat] = await peer(host.url)
+    peers[seat].send({ type: 'resume', room: session.room, token: sessions[seat].token })
+    assert.equal((await peers[seat].session()).nextSeq, seq[seat])
+    state = await peers[seat].state((state) => state.connected.every(Boolean) && state.revision > disconnected.revision)
+    for (const checkpoint of [disconnected, state]) {
+      assert.deepEqual(checkpoint.score, completed.score, 'reconnect must not apply the sealed delivery twice')
+      assert.deepEqual(checkpoint.last, completed.last, 'sealed event and checksum must remain unchanged')
+      assert.deepEqual(checkpoint.result, completed.result)
+      assert.deepEqual(checkpoint.wallets, completed.wallets, 'repeated checkpoints must not award the match twice')
+    }
+  }
   for (const client of peers) {
     client.send({ type: 'rematch', match: 1 })
     await client.ack()
@@ -182,11 +196,15 @@ test('legacy assisted deliveries retain hold/resume behavior for saved replays',
 
 test('a live manual run survives server restart and seals the non-striker run-out with correct control', async (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'ccl-duo-run-out-'))
-  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const hosts: Awaited<ReturnType<typeof startOnlineServer>>[] = []
+  t.after(async () => {
+    for (const host of hosts) await host.close()
+    rmSync(directory, { recursive: true, force: true })
+  })
   let now = 1000
   const options = { databasePath: join(directory, 'room.sqlite'), clock: () => now, nextSeed: () => 41 }
   const host = await startOnlineServer(options)
-  t.after(host.close)
+  hosts.push(host)
   const a = await peer(host.url)
   const b = await peer(host.url)
   a.send({ type: 'create-duo', overs: 2 })
@@ -218,7 +236,7 @@ test('a live manual run survives server restart and seals the non-striker run-ou
   await a.rejected('duplicate-sequence')
   await host.close()
   const restarted = await startOnlineServer(options)
-  t.after(restarted.close)
+  hosts.push(restarted)
   const recoveredA = await peer(restarted.url)
   const recoveredB = await peer(restarted.url)
   recoveredA.send({ type: 'resume', room: sessionA.room, token: sessionA.token })
@@ -244,12 +262,16 @@ test('a live manual run survives server restart and seals the non-striker run-ou
 
 test('Duo control swap requires both votes and rejects stale or live-ball consent across restart', async (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'ccl-duo-swap-'))
-  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const hosts: Awaited<ReturnType<typeof startOnlineServer>>[] = []
+  t.after(async () => {
+    for (const host of hosts) await host.close()
+    rmSync(directory, { recursive: true, force: true })
+  })
   const databasePath = join(directory, 'room.sqlite')
   let now = 1000
   const options = { databasePath, clock: () => now, nextSeed: () => 41 }
   const host = await startOnlineServer(options)
-  t.after(host.close)
+  hosts.push(host)
   const a = await peer(host.url)
   const b = await peer(host.url)
   a.send({ type: 'create-duo', overs: 2 })
@@ -293,7 +315,7 @@ test('Duo control swap requires both votes and rejects stale or live-ball consen
   await a.state((state) => Boolean(state.duoSwap?.votes[0]))
   await host.close()
   const restarted = await startOnlineServer(options)
-  t.after(restarted.close)
+  hosts.push(restarted)
   const recoveredA = await peer(restarted.url)
   let recoveredB = await peer(restarted.url)
   recoveredA.send({ type: 'resume', room: sessionA.room, token: sessionA.token })

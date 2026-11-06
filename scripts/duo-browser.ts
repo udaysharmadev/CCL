@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { chromium } from 'playwright-core'
 import { build, preview } from 'vite'
 import { Delivery, DT } from '../src/cricket.ts'
+import { DeliveryReplay } from '../src/delivery-replay.ts'
 import { ONLINE_WINDUP_MS, type OnlineServerMessage, type OnlineSnapshot } from '../src/online-contract.ts'
 import { startOnlineServer } from './online-server.ts'
 
@@ -146,11 +147,10 @@ try {
         await partner.page.screenshot({ path: '/tmp/ccl-duo-partner.png' })
       }
       if (delivery === 3) {
-        const forecast = new Delivery(release.active.options)
-        while (!forecast.outcome && forecast.tick < 900) {
-          if (forecast.tick === accepted.active?.shot?.tick) forecast.swing(accepted.active.shot.input)
-          forecast.step()
-        }
+        assert.ok(accepted.active)
+        const replay = new DeliveryReplay(accepted.active)
+        assert.ok(replay.advanceTo(900))
+        const forecast = replay.sim
         assert.equal(forecast.outcome?.reason, 'fielded')
         const runTick = forecast.tick - 110
         now += (runTick - new Delivery(release.active.options).contactTick - 6) * DT * 1000

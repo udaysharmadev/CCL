@@ -36,11 +36,19 @@ export type OnlineControl =
   | { type: 'next'; match: number; delivery: number }
   | { type: 'call'; match: number; delivery: number; call: 'run' | 'wait' | 'no' }
 export type OnlineClientMessage = OnlineHandshake | OnlineIntent | OnlineControl
-export type OnlineReplay = Readonly<{
-  options: DeliveryOptions
+export type OnlineDeliveryCommand = Readonly<{ tick: number; seq: number } & (
+  | { type: 'running'; running: boolean }
+  | { type: 'swing'; input: ShotInput }
+)>
+type LegacyDeliveryInputs = Readonly<{
   runs?: readonly Readonly<{ tick: number; running: boolean }>[]
   shot: Readonly<{ tick: number; input: ShotInput }> | null
 }>
+export type OnlineInputHistory =
+  | Readonly<{ version: 2; commands: readonly OnlineDeliveryCommand[] }>
+  | (LegacyDeliveryInputs & Readonly<{ version?: 1 }>)
+// shot/runs are compatibility views. Version 2 reconstructs exclusively from commands.
+export type OnlineReplay = Readonly<{ options: DeliveryOptions }> & LegacyDeliveryInputs & OnlineInputHistory
 export type OnlineActiveBall = OnlineReplay & Readonly<{
   tick: number
   phase: Delivery['phase']
