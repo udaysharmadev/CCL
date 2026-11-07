@@ -5,6 +5,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { GRAPHICS_QUALITY, renderPixelRatio, type GraphicsQuality } from './graphics-quality.ts'
 import { createGroundEffects } from './ground-effects.ts'
 import { QualityMaterials } from './quality-materials.ts'
+import { sampleBowlingMotion, type BowlingAppearance } from './bowling-motion.ts'
+import type { PlayerProfile } from './player-profile.ts'
+import { bowlingReleasePoint, type BowlingExecution } from './bowling.ts'
 import {
   BOUNDARY, DT, Delivery, FIELDERS, KEEPER, PITCH_LENGTH, fieldPositions, isSpinDelivery,
   type BoundaryFlight, type DeliveryKind, type FieldPreset, type PitchPreset, type Shot, type WeatherPreset, type Vec3,
@@ -37,6 +40,18 @@ export interface StadiumFrame {
   replay?: boolean
   reducedMotion?: boolean
   practiceSwing?: { age: number; shot: Shot }
+  /** Immutable match snapshots supplied by the match controller. */
+  bowlerProfile?: PlayerProfile
+  strikerProfile?: PlayerProfile
+  nonStrikerProfile?: PlayerProfile
+  bowlingSide?: 'over' | 'around'
+  bowlingExecution?: BowlingExecution
+  /** Physics-owned endpoint, also used at the last windup frame. */
+  bowlingRelease?: Vec3
+  /** Presentation age in seconds; the controller holds play until the walk-in ends. */
+  entranceAge?: number
+  /** The replaced end can be the non-striker after a run-out or over-end rotation. */
+  entranceEnd?: 'striker' | 'nonStriker'
 }
 
 const TAU = Math.PI * 2
@@ -800,13 +815,19 @@ export function athlete(scene: THREE.Scene, kit: Kit, role: Role, id: number, sh
   footShadow.scale.y = .67
   const body = group(base, 0, .86)
   const shoulders = group(body)
-  const playerSkin = skin[id % skin.length]
+  // One skin surface per athlete allows appearance changes without recoloring
+  // another player. It is collected by the stadium's existing disposal pass.
+  const playerSkin = skin[id % skin.length].clone()
   const helmeted = role === 'batter' || role === 'keeper'
   const handsPadded = helmeted
   mesh(shoulders, HIP, kit.pants, 0, .015, 0)
   mesh(shoulders, TORSO, kit.shirt, 0, .26, 0)
-  box(shoulders, kit.trim, 0, .297, -.147, .309, .032, .018)
+  if (role !== 'batter' && role !== 'bowler') box(shoulders, kit.trim, 0, .297, -.147, .309, .032, .018)
   box(shoulders, kit.trim, 0, .32, .146, .29, .026, .019)
+  if (role === 'batter' || role === 'bowler') {
+    box(shoulders, kit.trim, -.125, .365, .146, .036, .062, .014)
+    box(shoulders, kit.trim, .125, .365, .146, .052, .042, .014)
+  }
   mesh(shoulders, collar, kit.trim, 0, .474)
   const head = group(shoulders, 0, .58)
   mesh(head, HEAD, playerSkin)
@@ -857,7 +878,49 @@ export function athlete(scene: THREE.Scene, kit: Kit, role: Role, id: number, sh
   batchRigidParts(shoulders)
   batchRigidParts(head)
   for (const leg of legs) batchRigidParts(leg.knee)
-  return { base, body, shoulders, head, arms, legs, bat }
+  const identity: { key: string; surface?: THREE.MeshBasicMaterial; texture?: THREE.CanvasTexture; mesh?: THREE.Mesh } = { key: '' }
+  if (role === 'batter' || role === 'bowler') {
+    identity.surface = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false })
+    identity.mesh = mesh(shoulders, new THREE.PlaneGeometry(.39, .34), identity.surface, 0, .263, -.179)
+    identity.mesh.rotation.y = Math.PI
+    identity.mesh.visible = false
+  }
+  return { base, body, shoulders, head, arms, legs, bat, playerSkin, identity }
+}
+
+/** Repaint three small reusable jersey canvases only when identities change. */
+export function updateAthleteIdentity(rig: Rig, profile?: PlayerProfile) {
+  if (!rig.identity.surface || !rig.identity.mesh) return
+  rig.identity.mesh.visible = Boolean(profile)
+  if (!profile) { delete rig.base.userData.playerId; return }
+  const { jerseyName, jerseyNumber, skinTone, captain } = profile.identity
+  const key = `${profile.id}|${jerseyName}|${jerseyNumber}|${skinTone}|${captain}`
+  rig.base.userData.playerId = profile.id
+  if (rig.identity.key === key) return
+  rig.identity.key = key
+  rig.playerSkin.color.set(skinTone)
+  let texture = rig.identity.texture
+  if (!texture) {
+    texture = canvasMap(256, 256, () => {})
+    rig.identity.texture = texture
+    rig.identity.surface.map = texture
+    rig.identity.surface.needsUpdate = true
+  }
+  const canvas = texture.image as HTMLCanvasElement
+  const context = canvas.getContext('2d')!
+  context.clearRect(0, 0, 256, 256)
+  context.fillStyle = '#fff5d9'
+  context.textAlign = 'center'
+  context.textBaseline = 'middle'
+  context.font = `700 ${jerseyName.length > 12 ? 24 : 30}px Arial, sans-serif`
+  context.fillText(jerseyName, 128, 35, 234)
+  context.font = '900 142px Arial, sans-serif'
+  context.fillText(String(jerseyNumber).padStart(2, '0'), 128, 139, 218)
+  if (captain) {
+    context.font = '700 20px Arial, sans-serif'
+    context.fillText('CAPTAIN', 128, 229)
+  }
+  texture.needsUpdate = true
 }
 
 function neutralPose(rig: Rig, time: number, stance = 0) {
@@ -915,11 +978,11 @@ const gripPole = new THREE.Vector3()
 const gripLower = new THREE.Vector3()
 const gripInverse = new THREE.Quaternion()
 /** Keep both wrist targets reachable, instead of stretching forearms or detaching gloves. */
-function gripBat(rig: Rig) {
+function gripBat(rig: Rig, hand: 'right' | 'left' = 'right') {
   if (!rig.bat) return
   for (let pass = 0; pass < 8; pass++) {
     for (let i = 0; i < 2; i++) {
-      const offset = gripOffset.set(0, GRIP_OFFSETS[i], 0).applyQuaternion(rig.bat.quaternion)
+      const offset = gripOffset.set(0, GRIP_OFFSETS[hand === 'left' ? 1 - i : i], 0).applyQuaternion(rig.bat.quaternion)
       const wrist = gripWrist.copy(rig.bat.position).add(offset)
       const shoulder = rig.arms[i].shoulder.position
       const reach = gripReach.copy(wrist).sub(shoulder)
@@ -934,7 +997,7 @@ function gripBat(rig: Rig) {
   }
   for (let i = 0; i < 2; i++) {
     const arm = rig.arms[i]
-    const wrist = gripWrist.set(0, GRIP_OFFSETS[i], 0).applyQuaternion(rig.bat.quaternion).add(rig.bat.position)
+    const wrist = gripWrist.set(0, GRIP_OFFSETS[hand === 'left' ? 1 - i : i], 0).applyQuaternion(rig.bat.quaternion).add(rig.bat.position)
     const shoulder = arm.shoulder.position
     const pole = gripPole.set(i === 0 ? -.32 : .32, i === 0 ? -.18 : -.03, .30).add(shoulder)
     const elbow = elbowPosition(shoulder, wrist, pole)
@@ -958,16 +1021,17 @@ function plantFeet(rig: Rig, feet: THREE.Vector3[]) {
   })
 }
 
-export function batterPose(rig: Rig, time: number, swing: number | undefined, shot: StadiumFrame['shot'], direction = 0, impact?: Vec3, preparation = 0) {
+export function batterPose(rig: Rig, time: number, swing: number | undefined, shot: StadiumFrame['shot'], direction = 0, impact?: Vec3, preparation = 0, hand: 'right' | 'left' = 'right') {
+  const side = hand === 'left' ? -1 : 1
   neutralPose(rig, time)
   // Left shoulder and front foot point down the pitch; the head looks at the bowler.
-  rig.base.rotation.y = -1.32
+  rig.base.rotation.y = -1.32 * side
   const kind = shot ?? 'drive'
   const family = shotFamily(kind)
   const active = swing !== undefined && swing < 1.1
   const age = Math.max(0, swing ?? 0)
-  const contact = impact ?? { x: .10, y: .55, z: .46 }
-  const motion = bladePose(kind, age, contact, direction)
+  const contact = impact ?? { x: .10 * side, y: .55, z: .46 }
+  const motion = bladePose(kind, age, contact, direction, hand)
   const plant = active ? smooth(age / (5 / 60)) * motion.weight : 0
   const sweep = family === 'sweep'
   const backfoot = kind.startsWith('backfoot') || family === 'cross'
@@ -976,29 +1040,29 @@ export function batterPose(rig: Rig, time: number, swing: number | undefined, sh
   const turn = plant * (family === 'cross' || sweep ? -.48 : -.18) * Math.sin(direction)
   rig.body.position.y = .735 - plant * (sweep ? .22 : .035 + Math.max(0, .55 - contact.y) * .30) - duck * .20
   // Shift the pelvis with the step. Hip joints themselves never leave the body.
-  const lineStep = THREE.MathUtils.clamp(contact.x - rig.base.position.x, -.28, .18)
+  const lineStep = THREE.MathUtils.clamp((contact.x - rig.base.position.x) * side, -.28, .18) * side
   const stride = new THREE.Vector3(plant * lineStep * .5, 0, plant * (backfoot ? -.15 : .20))
   stride.applyAxisAngle(new THREE.Vector3(0, 1, 0), -rig.base.rotation.y)
   rig.body.position.x = stride.x
   rig.body.position.z = .015 + stride.z
   rig.shoulders.rotation.set(.16 + plant * (sweep ? .20 : .07) + duck * .15, turn, 0)
-  rig.head.rotation.set(-rig.shoulders.rotation.x * .6, -rig.base.rotation.y - turn, -.04)
-  const feet = [new THREE.Vector3(-.185, .065, .035), new THREE.Vector3(.185, .065, -.015)]
+  rig.head.rotation.set(-rig.shoulders.rotation.x * .6, -rig.base.rotation.y - turn, -.04 * side)
+  const feet = [new THREE.Vector3(-.185, .065, hand === 'left' ? -.015 : .035), new THREE.Vector3(.185, .065, hand === 'left' ? .035 : -.015)]
   // Plant toward the incoming line; shot direction controls the swing, not the foot target.
   const step = new THREE.Vector3(plant * lineStep, 0, plant * (backfoot ? -.25 : sweep ? .30 : .38))
   step.applyAxisAngle(new THREE.Vector3(0, 1, 0), -rig.base.rotation.y)
-  feet[backfoot ? 0 : 1].add(step)
+  feet[hand === 'left' ? backfoot ? 1 : 0 : backfoot ? 0 : 1].add(step)
   plantFeet(rig, feet)
   if (!rig.bat) return
   // Idle is a grounded guard, never the first frame of an overhead swing.
-  const guard = guardPose(time, preparation * (active ? motion.weight : swing === undefined ? 1 : 0))
+  const guard = guardPose(time, preparation * (active ? motion.weight : swing === undefined ? 1 : 0), hand)
   const centre = guard.centre.clone().add(rig.base.position)
   const shaft = guard.shaft.clone()
   if (active) {
     const stroke = smooth(age / (5 / 60)) * motion.weight
     if (evasion) {
-      centre.add(new THREE.Vector3(.17, kind === 'leave' ? .35 : .12, -.12).multiplyScalar(plant))
-      shaft.lerp(new THREE.Vector3(.1, .6, .8).normalize(), plant)
+      centre.add(new THREE.Vector3(.17 * side, kind === 'leave' ? .35 : .12, -.12).multiplyScalar(plant))
+      shaft.lerp(new THREE.Vector3(.1 * side, .6, .8).normalize(), plant)
     } else {
       centre.lerp(motion.centre, stroke)
       shaft.lerp(motion.shaft, stroke).normalize()
@@ -1015,7 +1079,7 @@ export function batterPose(rig: Rig, time: number, swing: number | undefined, sh
   for (let attempt = 0; attempt <= 24; attempt++) {
     localShaft.copy(wantedShaft).lerp(towardBody, attempt / 24).normalize()
     const reachable = rig.arms.every((arm, i) => localCentre.clone()
-      .addScaledVector(localShaft, i === 0 ? .380 : .480).distanceTo(arm.shoulder.position) <= .503)
+      .addScaledVector(localShaft, (hand === 'left' ? i === 1 : i === 0) ? .380 : .480).distanceTo(arm.shoulder.position) <= .503)
     if (reachable) break
   }
   // Yorkers meet the lower blade, not its centre. Slide along the blade plane
@@ -1034,46 +1098,87 @@ export function batterPose(rig: Rig, time: number, swing: number | undefined, sh
   const width = new THREE.Vector3().crossVectors(localShaft, face).normalize()
   rig.bat.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(width, localShaft, face))
   rig.bat.position.copy(localCentre).addScaledVector(localShaft, .525)
-  gripBat(rig)
+  gripBat(rig, hand)
 }
 
-function bowlingPose(rig: Rig, time: number, phase: StadiumFrame['phase'], windup: number, release: number, spin: boolean) {
-  rig.base.rotation.y = Math.PI
-  if (phase === 'windup') {
-    const run = THREE.MathUtils.smoothstep(windup, .09, 1)
-    rig.base.position.set(.3, 0, PITCH_LENGTH + (spin ? 4 : 8) - run * (spin ? 5.04 : 9.04))
-    runPose(rig, windup * 1.85, Math.sin(run * Math.PI) * .78 + run * .23)
-    const arm = THREE.MathUtils.smoothstep(windup, .78, .999)
-    const gather = THREE.MathUtils.smoothstep(windup, .62, .82) * (1 - THREE.MathUtils.smoothstep(windup, .88, 1))
-    const plant = THREE.MathUtils.smoothstep(windup, .87, .999)
-    rig.arms[1].shoulder.rotation.x = -arm * (spin ? 2.78 : 3.06)
-    rig.arms[1].shoulder.rotation.z = .18 + arm * (spin ? .62 : .14)
-    rig.arms[0].shoulder.rotation.x = -gather * 1.85 - plant * .42
-    rig.arms[0].elbow.rotation.x = -.3 - gather * .58
-    rig.body.position.y += gather * (spin ? .045 : .10)
-    rig.shoulders.rotation.x = arm * .13
-    rig.shoulders.rotation.y = (spin ? .40 : .25) * gather - plant * .11
-    rig.head.rotation.y = -rig.shoulders.rotation.y * .7
-    rig.legs[0].hip.rotation.x = THREE.MathUtils.lerp(rig.legs[0].hip.rotation.x, -.57, gather)
-    rig.legs[0].knee.rotation.x = THREE.MathUtils.lerp(rig.legs[0].knee.rotation.x, .84, gather)
-    rig.legs[1].hip.rotation.x = THREE.MathUtils.lerp(rig.legs[1].hip.rotation.x, -.19, plant)
-    rig.legs[1].knee.rotation.x = THREE.MathUtils.lerp(rig.legs[1].knee.rotation.x, .13, plant)
-  } else if (phase === 'flight' && release < .54) {
-    neutralPose(rig, time)
-    rig.base.position.set(.3, 0, PITCH_LENGTH - 1.04 - Math.min(release, .54) * 2)
-    const follow = 1 - THREE.MathUtils.smoothstep(release, 0, .42)
-    rig.arms[1].shoulder.rotation.x = -follow * 2.92
-    rig.arms[1].shoulder.rotation.z = .18 + follow * .17
-    rig.shoulders.rotation.x = Math.sin(follow * Math.PI) * .41
-    rig.shoulders.rotation.y = -.11 - Math.sin(follow * Math.PI) * .23
-    rig.head.rotation.x = -rig.shoulders.rotation.x * .6
-    rig.arms[0].shoulder.rotation.x = .35 * (1 - follow)
-    rig.legs[1].hip.rotation.x = follow * .36
+/** Articulated bowling pose: fast, medium, finger and wrist actions have separate
+ * choreography. Arm IK joins each action to the simulation's release endpoint. */
+export function bowlingPose(rig: Rig, time: number, phase: StadiumFrame['phase'], windup: number, releaseAge: number,
+  appearance: BowlingAppearance = { arm: 'right', type: 'fast', action: 'high-arm' },
+  release: Vec3 = { x: .28, y: 2.06, z: PITCH_LENGTH - 1.83 }) {
+  const motion = sampleBowlingMotion(appearance, phase, windup, releaseAge)
+  const side = appearance.arm === 'left' ? 1 : -1
+  const deliveryClock = phase === 'windup' ? windup * 2.7 : releaseAge
+  const following = phase === 'flight' || phase === 'field'
+  rig.base.scale.setScalar(1.28)
+  rig.base.rotation.set(0, Math.PI, 0)
+  // Lower side-arm and spin releases use a wider arm arc, rather than folding
+  // the elbow to reach a lower endpoint. The release itself remains fixed.
+  const releaseLean = motion.spin ? .04 : .11
+  const shoulderY = (.735 + .41 * Math.cos(releaseLean)) * 1.28
+  const verticalReach = release.y - shoulderY
+  const lateralReach = Math.sqrt(Math.max(0, (.505 * 1.28) ** 2 - verticalReach ** 2 - .105 ** 2))
+  rig.base.position.set(release.x + side * (.223 * 1.28 + lateralReach), 0, release.z + .12 + motion.distanceRemaining)
+  runPose(rig, motion.stride / 15, motion.runAmount)
+  rig.body.position.y = .735 + motion.gather * (motion.spin ? .038 : .085)
+  rig.shoulders.rotation.set(motion.lean, motion.twist, 0)
+  rig.head.rotation.set(-motion.lean * .72, -motion.twist * .76, 0)
+  const arm = rig.arms[motion.armIndex]
+  const guide = rig.arms[1 - motion.armIndex]
+  const arc = smooth((windup - .67) / .33)
+  if (phase === 'windup' || following && releaseAge < 1.2) {
+    const lifted = phase === 'windup' ? arc : 1 - smooth(releaseAge / .36)
+    arm.shoulder.rotation.set(-2.98 * lifted + (following ? .62 * Math.sin(motion.follow * Math.PI) : 0), 0,
+      side * .12 + motion.armArc * Math.sin(lifted * Math.PI * .84))
+    arm.elbow.rotation.set(-.36 * (1 - lifted) - (motion.wristSpin ? .31 : .04) * motion.gather, motion.wrist * motion.gather, 0)
+    guide.shoulder.rotation.set(-motion.gather * 2.24 - motion.plant * .36, 0, -side * .17)
+    guide.elbow.rotation.set(-.33 - motion.gather * .42, 0, 0)
+    const front = rig.legs[motion.frontFootIndex]
+    const rear = rig.legs[1 - motion.frontFootIndex]
+    front.hip.rotation.x = THREE.MathUtils.lerp(front.hip.rotation.x, -.51, motion.gather)
+    front.knee.rotation.x = THREE.MathUtils.lerp(front.knee.rotation.x, .81, motion.gather)
+    rear.hip.rotation.x += following ? .44 * Math.sin(motion.follow * Math.PI) : 0
+    rear.knee.rotation.x += following ? .94 * Math.sin(motion.follow * Math.PI) : 0
+    if (motion.plant > .02) {
+      const feet = [new THREE.Vector3(-.11, .065, -.16), new THREE.Vector3(.11, .065, -.16)]
+      feet[motion.frontFootIndex].z = .20
+      if (following) feet[1 - motion.frontFootIndex].y += .23 * Math.sin(motion.follow * Math.PI)
+      plantFeet(rig, feet)
+    }
+    if (motion.releaseBlend > 0) {
+      rig.base.updateWorldMatrix(true, true)
+      const wrist = arm.hand.getWorldPosition(new THREE.Vector3())
+      // At tick zero this is identical to the last windup sample. After release,
+      // the hand follows its own downward arc while the ball follows physics.
+      const target = new THREE.Vector3(release.x, release.y, release.z)
+      if (following) {
+        target.y -= .74 * smooth(releaseAge / .32)
+        target.z -= .46 * smooth(releaseAge / .32)
+      }
+      wrist.lerp(target, motion.releaseBlend)
+      const localWrist = rig.shoulders.worldToLocal(wrist)
+      const shoulder = arm.shoulder.position
+      const pole = new THREE.Vector3(shoulder.x + side * .18, shoulder.y + .09, -.23)
+      const elbow = elbowPosition(shoulder, localWrist, pole)
+      arm.shoulder.quaternion.setFromUnitVectors(DOWN, elbow.clone().sub(shoulder).normalize())
+      arm.elbow.quaternion.setFromUnitVectors(DOWN, localWrist.clone().sub(elbow).normalize().applyQuaternion(arm.shoulder.quaternion.clone().invert()))
+    }
   } else {
-    neutralPose(rig, time)
-    const ready = phase === 'ready'
-    rig.base.position.set(.3, 0, ready ? PITCH_LENGTH + (spin ? 4 : 8) : PITCH_LENGTH - 2.12)
+    if (phase === 'dead' && motion.runAmount > .01) {
+      runPose(rig, motion.stride / 15, motion.runAmount)
+      rig.base.rotation.y = Math.PI * (1 - smooth((releaseAge - .35) / .25) + smooth((releaseAge - 2.8) / .4))
+    } else neutralPose(rig, phase === 'ready' ? time : deliveryClock)
+    rig.body.position.y = .735
+    if (phase === 'ready') {
+      arm.shoulder.rotation.x = -.40
+      arm.elbow.rotation.x = -.55
+      guide.shoulder.rotation.x = -.47
+      guide.elbow.rotation.x = -.61
+    }
   }
+  rig.base.userData.bowlingStage = motion.stage
+  rig.base.userData.bowlingArm = appearance.arm
+  return motion
 }
 
 function receivePose(rig: Rig, delivery: Delivery | undefined, time: number) {
@@ -1255,6 +1360,9 @@ export function createStadium(container: HTMLElement) {
   let mode: StadiumFrame['mode'] | undefined
   let time = 0
   let deadTime = 0
+  let presentedBatterHand: 'left' | 'right' = 'right'
+  let presentedBowlerArm: 'left' | 'right' = 'right'
+  let presentedRelease: Readonly<Vec3> | undefined
   let boundaryDelivery: Delivery | undefined
   let boundaryFlight: BoundaryFlight | null = null
   let boundaryAccumulator = 0
@@ -1307,12 +1415,18 @@ export function createStadium(container: HTMLElement) {
   let confettiAge = 5
   const partyColors = [new THREE.Color(0xeaff53), new THREE.Color(0x5ae5e1), new THREE.Color(0xffa854)]
   let contextLost = false
+  let renderWidth = 0, renderHeight = 0, renderRatio = 0
 
   function resize() {
     const width = Math.max(1, container.clientWidth)
     const height = Math.max(1, container.clientHeight)
     if (disposed) return
-    renderer.setPixelRatio(renderPixelRatio(quality, width, window.devicePixelRatio))
+    const ratio = renderPixelRatio(quality, width, window.devicePixelRatio)
+    // Reassigning an unchanged canvas size clears its drawing buffer. An
+    // observer delivered just after a render must not blank that completed frame.
+    if (width === renderWidth && height === renderHeight && ratio === renderRatio) return
+    renderWidth = width; renderHeight = height; renderRatio = ratio
+    renderer.setPixelRatio(ratio)
     renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.fov = camera.aspect < 1.2 ? 52 : 43
@@ -1445,6 +1559,12 @@ export function createStadium(container: HTMLElement) {
     dust.update(dt, !reducedMotion && quality !== 'low')
     const visualTick = (delivery?.tick ?? 0) + (boundaryFlight?.tick ?? 0)
     const newMode = frame.mode !== mode
+    if (newMode) {
+      // The match controller has just exposed the canvas and score strip.
+      // Resolve that layout now rather than showing one stale observer-sized frame.
+      if (scoreboard) container.style.bottom = `${scoreboard.offsetHeight}px`
+      resize()
+    }
     deadTime = phase === 'dead' ? deadTime + dt : 0
     crowdMotion.time.value = reducedMotion ? 0 : time
     crowdMotion.energy.value = reducedMotion ? 0 : phase === 'dead' && frame.signal ? Math.max(0, 1 - deadTime / 4) : isHome ? .22 : .04
@@ -1482,16 +1602,23 @@ export function createStadium(container: HTMLElement) {
       fieldingColors.trim.color.setHex(isBowling && !frame.cooperative ? 0xf6c963 : 0xf4d4a1)
     }
 
+    updateAthleteIdentity(striker, frame.strikerProfile)
+    updateAthleteIdentity(nonStriker, frame.nonStrikerProfile)
+    updateAthleteIdentity(bowler, frame.bowlerProfile)
+    const batterHand = delivery?.bowling?.batterHand ?? frame.strikerProfile?.batting.hand ?? 'right'
+    presentedBatterHand = batterHand
+    const battingSide = batterHand === 'left' ? -1 : 1
+    const partnerHand = frame.nonStrikerProfile?.batting.hand ?? 'right'
     const running = delivery?.runnerProgress ?? 0
     const reverse = ((delivery?.completedRuns ?? 0) % 2) !== 0
     const progress = reverse ? 1 - running : running
     const strideLength = PITCH_LENGTH - 2.44
     const runnerPositions = delivery?.runnerPositions
-    striker.base.position.set(.57, 0, runnerPositions ? strikerRootZ(runnerPositions[0], running, delivery?.completedRuns ?? 0) : .08 + progress * strideLength)
-    nonStriker.base.position.set(-.84, 0, runnerPositions?.[1] ?? PITCH_LENGTH - 1.22 - progress * strideLength)
+    striker.base.position.set(.57 * battingSide, 0, runnerPositions ? strikerRootZ(runnerPositions[0], running, delivery?.completedRuns ?? 0) : .08 + progress * strideLength)
+    nonStriker.base.position.set(-.84 * battingSide, 0, runnerPositions?.[1] ?? PITCH_LENGTH - 1.22 - progress * strideLength)
     const runnerClock = (delivery?.tick ?? 0) * DT
-    const strikerGait = samplePlayerMotion(strikerMotion, .57, runnerPositions?.[0] ?? 1.22, runnerClock, resetActorMotion || !delivery)
-    const partnerGait = samplePlayerMotion(partnerMotion, -.84, runnerPositions?.[1] ?? PITCH_LENGTH - 1.22, runnerClock, resetActorMotion || !delivery)
+    const strikerGait = samplePlayerMotion(strikerMotion, .57 * battingSide, runnerPositions?.[0] ?? 1.22, runnerClock, resetActorMotion || !delivery)
+    const partnerGait = samplePlayerMotion(partnerMotion, -.84 * battingSide, runnerPositions?.[1] ?? PITCH_LENGTH - 1.22, runnerClock, resetActorMotion || !delivery)
     const swing = delivery?.swingTick == null ? frame.practiceSwing?.age : (delivery.tick - delivery.swingTick) * DT
     const awayFromGuard = running > 0 || (delivery?.partnerProgress ?? 0) > 0 || (delivery?.completedRuns ?? 0) > 0
     if (awayFromGuard) {
@@ -1504,9 +1631,9 @@ export function createStadium(container: HTMLElement) {
       striker.base.rotation.y = strikerGait.yaw
       nonStriker.base.rotation.y = partnerGait.yaw
     } else {
-      batterPose(striker, time, swing, frame.practiceSwing?.shot ?? frame.shot, frame.shotAngle, delivery?.batImpact ?? delivery?.projectedContact, delivery ? smooth((delivery.tick - delivery.contactTick + 26) / 23) : 0)
+      batterPose(striker, time, swing, frame.practiceSwing?.shot ?? frame.shot, frame.shotAngle, delivery?.batImpact ?? delivery?.projectedContact, delivery ? smooth((delivery.tick - delivery.contactTick + 26) / 23) : 0, batterHand)
       neutralPose(nonStriker, time, .025)
-      nonStriker.base.rotation.y = 2.75
+      nonStriker.base.rotation.y = partnerHand === 'left' ? -2.75 : 2.75
       nonStriker.arms[1].shoulder.rotation.x = -.67
       if (nonStriker.bat) nonStriker.bat.rotation.set(.73, 0, -.31)
     }
@@ -1517,12 +1644,36 @@ export function createStadium(container: HTMLElement) {
       striker.shoulders.rotation.y = Math.sin(time) * .15
     }
 
-    if (awayFromGuard || (phase === 'dead' && deadTime > .8)) gripBat(striker)
-    gripBat(nonStriker)
+    if (awayFromGuard || (phase === 'dead' && deadTime > .8)) gripBat(striker, batterHand)
+    gripBat(nonStriker, partnerHand)
+    const entrance = frame.entranceAge !== undefined && phase === 'ready' && frame.entranceAge < 1.35
+    const partnerEntrance = frame.entranceEnd === 'nonStriker'
+    const entrant = partnerEntrance ? nonStriker : striker
+    const entranceSide = partnerEntrance ? -battingSide : battingSide
+    const entranceGuardX = (partnerEntrance ? -.84 : .57) * battingSide
+    const entranceGuardZ = partnerEntrance ? PITCH_LENGTH - 1.22 : .08
+    if (entrance) {
+      const arrival = smooth(frame.entranceAge! / 1.35)
+      entrant.base.position.x += entranceSide * (1 - arrival) * 4.1
+      entrant.base.position.z += (partnerEntrance ? 1 : -1) * (1 - arrival) * 1.4
+      if (arrival < .985) {
+        runPose(entrant, frame.entranceAge!, .24 * (1 - arrival))
+        entrant.base.rotation.y = Math.atan2(-entranceSide * 4.1, partnerEntrance ? -1.4 : 1.4)
+        gripBat(entrant, partnerEntrance ? partnerHand : batterHand)
+      }
+    }
     const bowlerPhase = phase
     const bowlingKind = frame.bowlingKind ?? frame.delivery?.kind
     const spin = bowlingKind !== undefined && isSpinDelivery(bowlingKind)
-    bowlingPose(bowler, time, bowlerPhase, frame.windup ?? 0, (delivery?.tick ?? 0) * DT, spin)
+    const preparingNext = !frame.replay && (phase === 'ready' || phase === 'dead')
+    const execution = preparingNext ? frame.bowlingExecution ?? delivery?.bowling : delivery?.bowling ?? frame.bowlingExecution
+    const appearance: BowlingAppearance = execution ?? frame.bowlerProfile?.bowling ?? { arm: 'right', type: spin ? 'off-spin' : 'fast', action: spin ? 'finger-spin' : 'high-arm' }
+    const releasePoint = preparingNext
+      ? frame.bowlingRelease ?? (execution ? bowlingReleasePoint(execution) : frame.delivery?.release.position)
+      : delivery?.release.position ?? frame.bowlingRelease ?? (execution ? bowlingReleasePoint(execution) : frame.delivery?.release.position)
+    presentedBowlerArm = appearance.arm
+    presentedRelease = releasePoint
+    bowlingPose(bowler, time, bowlerPhase, frame.windup ?? 0, phase === 'dead' ? deadTime : (delivery?.tick ?? 0) * DT, appearance, releasePoint)
     if (delivery?.manualFielding && delivery.throwTarget === 'bowler' && (delivery.action === 'return' || delivery.wicketBroken)) {
       moveFielder(bowler, 0, PITCH_LENGTH + .25, dt, delivery, true)
       receivePose(bowler, delivery, time)
@@ -1589,8 +1740,8 @@ export function createStadium(container: HTMLElement) {
         trailGeometry.attributes.position.needsUpdate = true
       }
     } else if (held) {
-      heldBall.set(0, -.244, .052)
-      ballModel.position.copy(bowler.arms[1].elbow.localToWorld(heldBall))
+      bowler.base.updateWorldMatrix(true, true)
+      ballModel.position.copy(bowler.arms[appearance.arm === 'left' ? 1 : 0].hand.getWorldPosition(heldBall))
       ballModel.rotation.set(0, 0, .32)
       ballModel.scale.setScalar(1)
     }
@@ -1612,12 +1763,19 @@ export function createStadium(container: HTMLElement) {
       cameraPosition.set((4.7 + sway * .25) * lateral, 2.65, -7.2)
       cameraTarget.set(1.4 * lateral, 1.05, 7.5)
     } else if (isBowling) {
-      cameraPosition.set(-3.65 * lateral, 3.42, PITCH_LENGTH + 16.25)
-      cameraTarget.set(.14, .88, 8.1)
+      const armSide = appearance.arm === 'left' ? -1 : 1
+      const sequence = reducedMotion ? 0 : phase === 'windup' ? smooth((frame.windup ?? 0) / .82) : phase === 'flight' ? 1 : 0
+      cameraPosition.set(-armSide * THREE.MathUtils.lerp(2.6, 1.55, sequence) * lateral, THREE.MathUtils.lerp(3.25, 3.1, sequence), PITCH_LENGTH + THREE.MathUtils.lerp(12.1, 8.6, sequence))
+      cameraTarget.set(releasePoint?.x ?? .14, 1.08, 8.1)
     } else {
       // Keep the user's straight, behind-the-pitch view at every screen width.
-      cameraPosition.set(.4, 2.8, -6.2)
-      cameraTarget.set(.4, 1.05, 9.5)
+      cameraPosition.set(.4 * battingSide, 2.8, -6.2)
+      cameraTarget.set(.4 * battingSide, 1.05, 9.5)
+    }
+    if (entrance && !reducedMotion && !isHome) {
+      const reveal = 1 - smooth((frame.entranceAge! - .65) / .70)
+      cameraPosition.lerp(new THREE.Vector3(entranceGuardX + 3.2 * entranceSide, 1.95, entranceGuardZ + (partnerEntrance ? 3.9 : -3.9)), reveal)
+      cameraTarget.lerp(new THREE.Vector3(entranceGuardX, .90, entranceGuardZ), reveal)
     }
     if (frame.replay && isBowling) {
       cameraPosition.x += .84
@@ -1706,6 +1864,12 @@ export function createStadium(container: HTMLElement) {
       pixelRatio: renderer.getPixelRatio(), width: canvas.width, height: canvas.height,
       geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
       programs: renderer.info.programs?.length ?? 0, contextLost, disposed,
+      actors: {
+        batter: { id: striker.base.userData.playerId ?? null, hand: presentedBatterHand },
+        bowler: { id: bowler.base.userData.playerId ?? null, arm: presentedBowlerArm, stage: bowler.base.userData.bowlingStage,
+          hand: bowler.arms[presentedBowlerArm === 'left' ? 1 : 0].hand.getWorldPosition(new THREE.Vector3()).toArray(), release: presentedRelease ? { ...presentedRelease } : null },
+        jerseyTextures: [striker, nonStriker, bowler].filter(rig => Boolean(rig.identity.texture)).length,
+      },
       contextReleased: disposed && renderer.getContext().isContextLost(),
       boundary: boundaryFlight ? { ball: { ...boundaryFlight.ball }, tick: boundaryFlight.tick, landed: boundaryFlight.landedAt !== null, settled: boundaryFlight.settled } : null }),
   }

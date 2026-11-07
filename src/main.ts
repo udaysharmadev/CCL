@@ -2,6 +2,14 @@ import './style.css'
 import './clubhouse.css'
 import './lobby.css'
 import './menu-theme.css'
+import './bowling-hud.css'
+import './squad.css'
+import { createBowlingHud } from './bowling-hud.ts'
+import { createPlayerSelection } from './player-selection-ui.ts'
+import { defaultPlayerProfile, localBattingStyle, type PlayerProfile } from './player-profile.ts'
+import { snapshotPlayerProfiles, recordPlayerMatch, localLineupError } from './player-store.ts'
+import { createBowlingExecution, chooseAIDelivery, bowlingKind, bowlingReleasePoint, type BowlingExecution } from './bowling.ts'
+import { createManagedInnings, chooseOpeningPair, chooseNextBatter, recommendedBatter, chooseAIBowler, needsBowlerSelection, activeOverBowler, bowlerEligibility } from './match-selection.ts'
 import { renderMatchScorecard, overSummary } from './scorecard.ts'
 import { createFieldMap } from './field-map.ts'
 import { swipeShot, type BattingMode } from './swipe.ts'
@@ -14,8 +22,8 @@ import { createStadium, VENUE_BOUNDARIES, VENUE_NAMES, type StadiumFrame } from 
 import { mark, readTelemetry, sample } from './telemetry.ts'
 import { initializePlatform, inviteLink, inviteRoom, leavePublishedRoom, publishRoom, save, setGameplay, setLoading, stored } from './platform.ts'
 import { PITCH_LABELS, PITCH_PRESETS, WEATHER_LABELS, WEATHER_PRESETS } from './cricket.ts'
-import { type RoomSettings } from './match-data.ts'
-import { DEFAULT_SETTINGS, getLineup, getSettings, isBowler, setupMenus, type SoloSettings } from './setup.ts'
+import { OPPONENT_NAMES, OPPONENT_BOWLERS, type RoomSettings } from './match-data.ts'
+import { DEFAULT_SETTINGS, getLineup, getOnlineLineup, getSettings, isBowler, setupMenus, type SoloSettings } from './setup.ts'
 import { connectOnline, rememberedRoom, roomCode, type OnlineConnectionStatus } from './online-client.ts'
 import { ONLINE_WINDUP_MS, type OnlineHandshake, type OnlineSeat, type OnlineSnapshot } from './online-contract.ts'
 import { DeliveryReplay } from './delivery-replay.ts'
@@ -92,8 +100,6 @@ const ui = {
   drsDetail: element('drs-detail'), drsActions: element('drs-actions'),
 }
 
-const OPPONENT_NAMES = ['Hayes', 'Reed', 'Ward', 'Mills', 'Cole', 'Nash', 'Bell', 'Frost', 'Pike', 'King', 'Banks']
-const OPPONENT_BOWLERS = ['Ward', 'Cole', 'Mills', 'Bell', 'King']
 const SIX_BEST_KEY = 'ccl.six-best.v1'
 const CAREER_KEY = 'ccl.career.v1'
 const SOUND_KEY = 'ccl.sound.v1'
@@ -104,7 +110,7 @@ type View = 'home' | 'training' | 'solo' | 'online' | 'six'
 type Phase = StadiumFrame['phase']
 type Career = { coins: number; xp: number }
 type RecordedShot = { tick: number; input: ShotInput }
-type Replay = { fielding?: readonly { tick: number; command: FieldingCommand }[]; runs?: readonly { tick: number; running: boolean }[]; options: DeliveryOptions; shot?: RecordedShot; signal?: StadiumFrame['signal'] }
+type Replay = { fielding?: readonly { tick: number; command: FieldingCommand }[]; runs?: readonly { tick: number; running: boolean }[]; options: DeliveryOptions; shot?: RecordedShot; signal?: StadiumFrame['signal']; players?: { bowler: PlayerProfile; striker: PlayerProfile; nonStriker: PlayerProfile } }
 type DrsState = {
   reviewsLeft: number
   pendingOutcome?: DeliveryOutcome
@@ -118,6 +124,10 @@ type Match = {
   playerBatsFirst: boolean
   settings: SoloSettings
   lineup: string[]
+  profiles: Record<string, PlayerProfile>
+  instanceId: string
+  selectedBowler?: { playerId: string; over: number }
+  openingChosen?: boolean
   drs: DrsState
   reward?: Career
   saved?: boolean
@@ -175,6 +185,67 @@ let onlineNotice = ''
 let onlineReplay: DeliveryReplay | undefined
 let onlineHistory = ''
 let onlineContactPlayed = false
+let entranceAge: number | undefined
+let entranceEnd: 'striker' | 'nonStriker' = 'striker'
+let preparedExecution: BowlingExecution | undefined
+const playerSelection = createPlayerSelection(home)
+const bowlingHud = createBowlingHud(ui.dock, () => {
+  if (paused || phase !== 'ready' && phase !== 'dead') return
+  if (ensurePlayerSelection()) return
+  if (!bowlingHud.timing) bowlingHud.startTiming()
+  else { bowlingHud.finishTiming(); beginBall(true) }
+}, () => showBowlerSelection(), () => { refreshPending = true })
+
+function matchProfile(id: string): PlayerProfile { return match?.profiles[id] ?? defaultPlayerProfile(id) }
+function battingProfiles(): PlayerProfile[] { return (isBowling() ? OPPONENT_NAMES : match?.lineup ?? []).map(matchProfile) }
+function batterProfile(which: 'striker' | 'nonStriker' = 'striker'): PlayerProfile {
+  const state = currentInnings(), index = state?.[which] ?? (which === 'striker' ? 1 : 2)
+  const id = state?.batting[index - 1]?.playerId ?? (isBowling() ? OPPONENT_NAMES : match?.lineup ?? [])[index - 1] ?? 'Mehta'
+  return matchProfile(id)
+}
+function replaceInnings(state: Innings) { if (match) { if (match.second) match.second = state; else match.first = state } }
+function resumeSelection(walkIn = false, incomingEnd: 'striker' | 'nonStriker' = 'striker') {
+  paused = false; refreshPending = true; setGameplay(true)
+  if (walkIn) { entranceAge = 0; entranceEnd = incomingEnd; setPhase('ready'); live = undefined; record = undefined; signal = undefined }
+  else if (!isBowling()) beginBall()
+}
+function showBowlerSelection() {
+  const state = currentInnings()
+  if (view !== 'solo' || !match || !state || state.complete || activeOverBowler(state) || playerSelection.open) return
+  paused = true; setGameplay(false); bowlingHud.reset()
+  playerSelection.bowler(match.lineup.map(matchProfile), state, id => {
+    if (!match) return
+    match.selectedBowler = { playerId: id, over: Math.floor(state.legalBalls / 6) }
+    record = undefined; live = undefined; signal = undefined; setPhase('ready')
+    resumeSelection(); refreshPending = true
+  })
+}
+/** Player-choice gates run only on managed local innings, after DRS settles. */
+function ensurePlayerSelection(): boolean {
+  const state = currentInnings()
+  if (view !== 'solo' || !match || !state || state.complete) return false
+  if (playerSelection.open || match.drs.pendingOutcome || entranceAge !== undefined) return true
+  if (!isBowling() && !match.openingChosen && state.attempts === 0) {
+    paused = true; setGameplay(false)
+    playerSelection.openers(battingProfiles(), state, (a, b) => {
+      if (!match) return
+      replaceInnings(chooseOpeningPair(state, a, b)); match.openingChosen = true; resumeSelection(true)
+    }); return true
+  }
+  if (state.selection?.pendingBatter) {
+    if (isBowling()) { const next = recommendedBatter(state); if (next) replaceInnings(chooseNextBatter(state, next)) }
+    else {
+      paused = true; setGameplay(false)
+      playerSelection.batter(battingProfiles(), state, index => { replaceInnings(chooseNextBatter(state, index)); resumeSelection(true, state.selection!.pendingBatter!) }); return true
+    }
+  }
+  if (needsBowlerSelection(state, match.selectedBowler)) {
+    if (isBowling()) { showBowlerSelection(); return true }
+    const p = chooseAIBowler(OPPONENT_NAMES.map(matchProfile), state, batterProfile().batting.hand)
+    if (p) match.selectedBowler = { playerId: p.id, over: Math.floor(state.legalBalls / 6) }
+  }
+  return false
+}
 
 /** A local match owns its reviews; the allowance renews for each innings. */
 function newDrsState(): DrsState {
@@ -353,6 +424,10 @@ function nextSeed(base: number, attempt: number, bowling: boolean) {
 }
 
 function start(mode: 'solo' | 'training' | 'six', settings = mode === 'solo' ? getSettings() : DEFAULT_SETTINGS) {
+  if (mode === 'solo') {
+    const lineupIssue = localLineupError(getLineup())
+    if (lineupIssue) { menus.openLineup(); element('lineup-status').textContent = lineupIssue; return }
+  }
   enableAudio()
   const rawSeed = new URLSearchParams(location.search).get('seed')
   const seed = rawSeed !== null && /^\d{1,10}$/.test(rawSeed)
@@ -367,13 +442,16 @@ function start(mode: 'solo' | 'training' | 'six', settings = mode === 'solo' ? g
           Number.isSafeInteger(value.points) && value.points >= 0) sixBest = value
     } catch { /* An unreadable best starts a new local record. */ }
   }
+  const lineup = getLineup(), profiles = snapshotPlayerProfiles([...lineup, ...OPPONENT_NAMES])
+  const battingIds = settings.toss === 'bat' ? lineup : OPPONENT_NAMES
   match = {
-    seed, first: newInnings(mode === 'training' ? 1 : settings.overs, undefined,
-      settings.toss === 'bat' ? getLineup() : OPPONENT_NAMES),
-    playerBatsFirst: settings.toss === 'bat', settings, lineup: getLineup(),
+    seed, first: mode === 'solo' ? createManagedInnings(settings.overs, undefined, battingIds.map(id => profiles[id]))
+      : newInnings(mode === 'training' ? 1 : settings.overs, undefined, battingIds),
+    playerBatsFirst: settings.toss === 'bat', settings, lineup, profiles, instanceId: crypto.randomUUID(),
     drs: newDrsState(),
   }
   clearReviewPresentation()
+  playerSelection.close(); bowlingHud.reset(); entranceAge = undefined
   stadium?.setConditions(settings)
   paused = false
   replaying = false
@@ -393,10 +471,11 @@ function start(mode: 'solo' | 'training' | 'six', settings = mode === 'solo' ? g
   setPhase('ready')
   mark('firstPlay')
   setGameplay(true)
-  if (!isBowling()) beginBall()
+  if (!ensurePlayerSelection() && !isBowling()) beginBall()
 }
 
 function home() {
+  playerSelection.close(); bowlingHud.reset(); entranceAge = undefined
   if (network) {
     network.stop()
     network = undefined
@@ -437,10 +516,12 @@ function showHomeMatch() {
   element('home-venue-name').textContent = VENUE_NAMES[saved.venue].toUpperCase()
 }
 
-function beginBall() {
+function beginBall(executed = false) {
   const innings = currentInnings()
   if (!match || !innings || innings.complete || (view === 'six' && six.complete) || paused || replaying ||
     (phase !== 'ready' && phase !== 'dead')) return
+  if (ensurePlayerSelection()) return
+  if (view === 'solo' && isBowling() && !executed) { bowlingHud.startTiming(); return }
   const bowling = isBowling()
   const seed = nextSeed(match.seed, innings.attempts, bowling)
   let kind = activeDelivery
@@ -453,8 +534,10 @@ function beginBall() {
   const { venue, pitch, weather } = match.settings
   const bowlerPool = bowling ? (match.lineup.filter(isBowler).slice(0, 5) ?? []) : OPPONENT_BOWLERS
   const overIndex = Math.floor(innings.legalBalls / BALLS_PER_OVER)
-  const bowlerName = bowlerPool[overIndex % Math.max(1, bowlerPool.length)] ?? 'Bowler'
-  const style = bowlingStyle(bowlerName)
+  const bowlerId = view === 'solo' ? match.selectedBowler?.playerId ?? bowlerPool[0] : bowlerPool[overIndex % Math.max(1, bowlerPool.length)] ?? 'Bowler'
+  const bowlerProfile = matchProfile(bowlerId)
+  const bowlerName = view === 'solo' ? bowlerProfile.identity.displayName : bowlerId
+  const style = bowlingStyle(bowlerId)
   // The bowler at the crease really bowls the ball he bowls. Training and the
   // easiest difficulty keep to a simpler repertoire.
   const simple = view === 'six' || view === 'training' || match.settings.difficulty === 'Rookie'
@@ -469,23 +552,35 @@ function beginBall() {
     effort = style.effort
   }
   const batters = bowling ? OPPONENT_NAMES : (match.lineup ?? [])
+  const striker = batterProfile(), nonStriker = batterProfile('nonStriker')
+  let execution: BowlingExecution | undefined
+  if (view === 'solo') {
+    execution = bowling ? createBowlingExecution(bowlerProfile, { ...bowlingHud.controls,
+      workload: bowlerEligibility(bowlerProfile, innings).figures.balls, batterHand: striker.batting.hand })
+      : chooseAIDelivery(bowlerProfile, innings, seed, striker.batting.hand, lastReplay?.options.bowling?.variation)
+    kind = bowlingKind(execution); line = execution.line; effort = execution.power
+  }
   const runnerPace: [number, number] = [
-    battingStyle(batters[innings.striker - 1] ?? '').running,
-    battingStyle(batters[innings.nonStriker - 1] ?? '').running,
+    view === 'solo' ? localBattingStyle(striker).running : battingStyle(batters[innings.striker - 1] ?? '').running,
+    view === 'solo' ? localBattingStyle(nonStriker).running : battingStyle(batters[innings.nonStriker - 1] ?? '').running,
   ]
+  const defenders = (bowling ? match.lineup : OPPONENT_NAMES).map(matchProfile)
+  const keeper = [...defenders].filter(p => p.id !== bowlerId).sort((a, b) => b.fielding.wicketkeeping - a.fielding.wicketkeeping)[0]
+  const fielding = keeper ? { keeper: { ...keeper.fielding }, fielders: defenders.filter(p => p.id !== bowlerId && p.id !== keeper.id).map(p => ({ ...p.fielding })) } : undefined
   record = { options: {
     seed, kind, line, effort, freeHit: innings.freeHit, field: bowling ? activeField : 'balanced',
     fieldLayout: bowling ? fieldLayout : undefined,
     ...(bowling && match.settings.fielding === 'manual' ? { fieldingMode: 'manual' as const } : {}),
     pitch, weather, maxOutside: view === 'training' ? undefined : outsideLimit(innings.overs, innings.legalBalls), boundary: VENUE_BOUNDARIES[venue],
     bowler: bowlerName,
+    ...(execution ? { bowling: execution, bowlerId, batterHand: striker.batting.hand, batting: { ...striker.batting }, fielding } : {}),
     // The pitch wears as the innings goes on: it bounces less and turns more.
     pitchWear: Math.min(1, innings.legalBalls / 96),
     runnerPace,
     timingWindow: TIMING_WINDOWS[settings.timing],
     ...(bowling ? { swing: style.swing, turn: style.turn } : {}),
     ...(!bowling && view !== 'six' ? { runningMode: 'manual' as const } : {}),
-  } }
+  }, ...(view === 'solo' ? { players: { bowler: bowlerProfile, striker, nonStriker } } : {}) }
   signal = undefined
   gestureSwing = undefined
   ui.shotFeedback.hidden = true
@@ -496,7 +591,7 @@ function beginBall() {
   pointer = undefined
   ui.swipeTrail.classList.remove('drawing')
   setPhase('windup')
-  ui.status.textContent = `${DELIVERY_LABELS[kind]} delivery in three seconds.`
+  ui.status.textContent = `${bowlerName} begins the run-up.`
 }
 
 function release() {
@@ -507,7 +602,8 @@ function release() {
     const seed = record.options.seed
     const projected = live.projectedContact
     const difficulty = match.settings.difficulty
-    const spread = { Rookie: 17, Club: 12, Pro: 8, Legend: 5 }[difficulty]
+    const batting = record.players?.striker.batting
+    const spread = Math.max(4, Math.round({ Rookie: 17, Club: 12, Pro: 8, Legend: 5 }[difficulty] * (batting ? 1.6 - batting.timing / 100 * .75 : 1)))
     const skillError = (seed >>> 9) % spread - Math.floor(spread / 2)
     const strokes: readonly Shot[] = difficulty === 'Rookie' || difficulty === 'Club'
       ? SHOTS.slice(0, 4)
@@ -516,13 +612,14 @@ function release() {
     if (Math.abs(projected.x) < 1.08 && seed % (difficulty === 'Rookie' ? 5 : 10) !== 0) {
       aiShot = {
         tick: Math.max(0, live.contactTick + skillError),
-        input: { kind, aim: SHOT_ANGLES[kind] + ((seed >>> 4) % 11 - 5) * 0.12, power: 0.64 },
+        input: { kind, aim: SHOT_ANGLES[kind] * (record.options.batterHand === 'left' ? -1 : 1) + ((seed >>> 4) % 11 - 5) * 0.12, power: batting ? .42 + batting.aggression / 100 * .4 : 0.64 },
       }
     }
   }
   sound('release')
   if (!replaying) mark('firstRelease')
   setPhase('flight')
+  if (live.bowlingFeedback) bowlingHud.feedback(`${live.bowlingFeedback.quality} · ${live.bowlingFeedback.details}`, live.pitchPoint ?? undefined)
   ui.status.textContent = isBowling() ? 'Ball released.' : 'Ball released. Time your swing.'
 }
 
@@ -647,7 +744,7 @@ function roomConfiguration(state: OnlineSnapshot, seat: OnlineSeat) {
   ready.textContent = state.ready[seat] ? 'XI approved' : 'Approve XI & ready'
   ready.disabled = state.ready[seat]
   ready.addEventListener('click', () => network?.send({
-    type: 'approve', version: state.settingsVersion, lineup: state.mode === 'duo' && seat === 1 ? [...state.lineups[0]] : getLineup(),
+    type: 'approve', version: state.settingsVersion, lineup: state.mode === 'duo' && seat === 1 ? [...state.lineups[0]] : getOnlineLineup(),
   }))
   const readiness = document.createElement('p')
   readiness.className = 'overlay-text'
@@ -655,7 +752,7 @@ function roomConfiguration(state: OnlineSnapshot, seat: OnlineSeat) {
   const xi = document.createElement('p')
   xi.className = 'overlay-text'
   xi.textContent = (state.mode === 'duo' ? 'Team XI · ' : 'Your XI · ') +
-    (state.mode === 'duo' && seat === 1 ? state.lineups[0] : state.ready[seat] ? state.lineups[seat] : getLineup()).join(', ')
+    (state.mode === 'duo' && seat === 1 ? state.lineups[0] : state.ready[seat] ? state.lineups[seat] : getOnlineLineup()).join(', ')
   const choose = document.createElement('button')
   choose.type = 'button'
   choose.className = 'secondary'
@@ -1107,7 +1204,8 @@ function afterBall() {
     openOverlay('INNINGS BREAK', chasing ? 'Time to chase' : 'Time to defend', text, [
       { label: chasing ? 'Start the chase' : 'Take the field', run: () => {
         if (!match) return
-        match.second = newInnings(innings.overs, target, match.playerBatsFirst ? OPPONENT_NAMES : match.lineup)
+        match.second = createManagedInnings(innings.overs, target, (match.playerBatsFirst ? OPPONENT_NAMES : match.lineup).map(matchProfile))
+        match.selectedBowler = undefined; match.openingChosen = false; bowlingHud.reset()
         match.drs = newDrsState()
         clearReviewPresentation()
         live = undefined
@@ -1116,7 +1214,7 @@ function afterBall() {
         signal = undefined
         closeOverlay()
         setPhase('ready')
-        if (!isBowling()) beginBall()
+        if (!ensurePlayerSelection() && !isBowling()) beginBall()
         ui.next.focus()
       } },
       { label: 'Return to stadium', run: home, secondary: true },
@@ -1192,9 +1290,9 @@ function finishMatch() {
     career = { coins: previous.coins + match.reward.coins, xp: previous.xp + match.reward.xp }
     match.saved = save(CAREER_KEY, JSON.stringify(career))
     // The career record keeps the numbers a player wants to see.
-    const batting = second.batting.length ? second.batting : first.batting
+    const batting = homeScore.batting
     const playerRuns = batting.reduce((total, batter) => total + batter.runs, 0)
-    const playerWickets = second.bowling.reduce((total, bowler) => total + bowler.wickets, 0)
+    const playerWickets = awayScore.bowling.reduce((total, bowler) => total + bowler.wickets, 0)
     const fours = batting.reduce((total, batter) => total + batter.fours, 0)
     const sixes = batting.reduce((total, batter) => total + batter.sixes, 0)
     careerRecord = {
@@ -1211,6 +1309,7 @@ function finishMatch() {
       xp: career.xp,
     }
     saveCareer(careerRecord)
+    recordPlayerMatch(match.instanceId, [first, second], Object.fromEntries(match.lineup.map(id => [id, match!.profiles[id]])))
     showCareerSummary()
     showWallet()
     mark('matchComplete')
@@ -1262,7 +1361,7 @@ function closeOverlay() {
 }
 
 function pause() {
-  if (view === 'home' || ui.overlay.open || ui.fieldDialog.open || ui.settingsDialog.open || ui.scorecardDialog.open) return
+  if (view === 'home' || playerSelection.open || ui.overlay.open || ui.fieldDialog.open || ui.settingsDialog.open || ui.scorecardDialog.open) return
   if (view === 'online') onlinePanel = 'exit'
   openOverlay(view === 'online' ? 'ONLINE MATCH' : VENUE_NAMES[match?.settings.venue ?? 'suncrest'].toUpperCase(),
     'Paused', view === 'online' ? 'The online match clock continues while this menu is open.'
@@ -1321,14 +1420,17 @@ function renderScore(innings: Innings) {
     const row = document.createElement('span')
     row.className = index === 0 ? 'on-strike' : ''
     const name = document.createElement('b')
-    name.textContent = `${lineup[number - 1] ?? batter?.name ?? 'Batter'}${index === 0 ? ' *' : ''}`
+    const display = view === 'solo' ? batter?.name ?? 'Next batter' : lineup[number - 1] ?? batter?.name ?? 'Batter'
+    const hand = view === 'solo' && batter?.playerId ? ` ${matchProfile(batter.playerId).batting.hand === 'left' ? 'LHB' : 'RHB'}` : ''
+    name.textContent = `${display}${index === 0 ? ' *' : ''}${hand}`
     const score = document.createElement('strong')
     score.textContent = `${batter?.runs ?? 0} (${batter?.balls ?? 0})`
     row.append(name, score)
     return row
   }))
-  const bowlerName = online?.bowler ?? bowlers[lastBall % bowlers.length] ?? 'Bowler'
-  const bowler = innings.bowling.find(item => item.name === bowlerName)
+  const selectedId = view === 'solo' ? match?.selectedBowler?.playerId : undefined
+  const bowlerName = selectedId ? matchProfile(selectedId).identity.displayName : online?.bowler ?? bowlers[lastBall % bowlers.length] ?? 'Bowler'
+  const bowler = innings.bowling.find(item => selectedId ? item.playerId === selectedId : item.name === bowlerName)
   ui.stats.textContent = `${bowlerName}  ${bowler?.wickets ?? 0}-${bowler?.runs ?? 0}  (${formatOvers(bowler?.balls ?? 0)})`
   ui.broadcastMatch.textContent = `${ui.teamCode.textContent === 'RDG' ? 'RIDGEBACKS v SUNCREST' : 'SUNCREST v RIDGEBACKS'} • ${view === 'training' ? 'NETS' : online?.maxOutside === 2 || outsideLimit(innings.overs, innings.legalBalls) === 2 ? 'POWERPLAY' : `${innings.overs}-OVER MATCH`}`
   const rates = runRates(innings)
@@ -1370,6 +1472,18 @@ function refresh() {
   ui.game.dataset.view = view
   ui.game.dataset.phase = phase
   ui.game.dataset.batting = String(!bowling && inGame)
+  const localBowling = view === 'solo' && bowling
+  ui.game.dataset.localBowling = String(localBowling)
+  bowlingHud.root.hidden = !localBowling || phase === 'field' || Boolean(innings?.complete) || playerSelection.open
+  if (localBowling && innings && match?.selectedBowler) {
+    bowlingHud.configure(matchProfile(match.selectedBowler.playerId), innings, batterProfile().batting.hand,
+      phase !== 'ready' && phase !== 'dead' || replaying || entranceAge !== undefined,
+      !activeOverBowler(innings))
+    preparedExecution = createBowlingExecution(matchProfile(match.selectedBowler.playerId), { ...bowlingHud.controls,
+      workload: bowlerEligibility(matchProfile(match.selectedBowler.playerId), innings).figures.balls, batterHand: batterProfile().batting.hand })
+  } else {
+    preparedExecution = undefined
+  }
   ui.home.hidden = ui.venue.hidden = inGame
   ui.fieldMapButton.hidden = ui.pause.hidden = ui.scoreboard.hidden = ui.matchId.hidden = ui.playfield.hidden = ui.dock.hidden = !inGame
   ui.batControls.hidden = !inGame || bowling
@@ -1419,6 +1533,8 @@ function refresh() {
     ? (view === 'solo' && !match?.second ? 'Innings break →' : 'See result →')
     : bowling ? 'Bowl →' : 'Next ball →'
   ui.next.setAttribute('aria-label', ui.next.textContent.replace(' →', ''))
+  if (localBowling && !innings?.complete && !replaying) ui.next.hidden = true
+  if (entranceAge !== undefined) ui.next.hidden = true
   const partnerCall = duo && onlineState?.partnerCall
     ? `Player ${onlineState.partnerCall.seat + 1} · ${onlineState.partnerCall.call.toUpperCase()}!` : ''
   const swapHint = duo && onlineState?.phase === 'ready'
@@ -1462,6 +1578,11 @@ function frame(now: number) {
   if (!paused) {
     if (delta > 0) sample('frameMs', delta * 1000)
     elapsed += dt
+    bowlingHud.advance(dt)
+    if (entranceAge !== undefined) {
+      entranceAge += dt
+      if (entranceAge >= 1.5) { entranceAge = undefined; refreshPending = true; if (!isBowling()) beginBall() }
+    }
     if (view === 'online') {
       if (phase === 'windup') {
         const kind = onlineState?.bowlingKind ?? 'fast'
@@ -1499,6 +1620,10 @@ function frame(now: number) {
   const presentationStart = performance.now()
   if (!paused) sample('simulationMs', presentationStart - simulationStart)
   if (match?.drs.pendingOutcome && now > match.drs.reviewDeadline) expireReview()
+  if (view === 'solo' && !paused && !replaying && phase === 'dead' && elapsed >= 1.8 && !match?.drs.pendingOutcome && !currentInnings()?.complete) {
+    const state = currentInnings()!
+    if (state.selection?.pendingBatter || isBowling() && needsBowlerSelection(state, match?.selectedBowler)) ensurePlayerSelection()
+  }
   if (view !== 'online' && !paused && !replaying && !isBowling() && phase === 'dead' && !match?.drs.pendingOutcome && !currentInnings()?.complete && autoNext) {
     if (elapsed >= 4.5 && !stadium?.boundaryPlaying()) beginBall()
     else ui.next.textContent = stadium?.boundaryPlaying() ? 'Watching the boundary…' : `Next ball · ${Math.max(1, Math.ceil(4.5 - elapsed))}`
@@ -1537,6 +1662,22 @@ function frame(now: number) {
     renderAim.z = bounceLength(bowlingKind)
     renderFrame.aim = mode === 'bowl' && !(view === 'online' && onlineState?.mode === 'duo') ? renderAim : undefined
     renderFrame.bowlingKind = bowlingKind
+    const localPlayers = view === 'solo' ? record?.players : undefined
+    const preparingBowling = view === 'solo' && mode === 'bowl' && !replaying && (phase === 'ready' || phase === 'dead')
+    renderFrame.bowlerProfile = preparingBowling && match?.selectedBowler ? matchProfile(match.selectedBowler.playerId)
+      : localPlayers?.bowler ?? (view === 'solo' && match?.selectedBowler ? matchProfile(match.selectedBowler.playerId) : undefined)
+    renderFrame.strikerProfile = localPlayers?.striker ?? (view === 'solo' ? batterProfile() : undefined)
+    renderFrame.nonStrikerProfile = localPlayers?.nonStriker ?? (view === 'solo' ? batterProfile('nonStriker') : undefined)
+    const execution = preparingBowling ? preparedExecution : record?.options.bowling
+    renderFrame.bowlingExecution = view === 'solo' ? execution : undefined
+    renderFrame.bowlingSide = execution?.side ?? (view === 'solo' ? bowlingHud.controls.side : undefined)
+    renderFrame.bowlingRelease = execution ? bowlingReleasePoint(execution) : undefined
+    renderFrame.entranceAge = entranceAge
+    renderFrame.entranceEnd = entranceEnd
+    if (view === 'solo' && mode === 'bowl') {
+      const target = execution && phase !== 'ready' && phase !== 'dead' ? execution : bowlingHud.controls
+      renderAim.x = target.line * (target.batterHand === 'left' ? -1 : 1); renderAim.z = target.length
+    }
     const innings = currentInnings()
     renderFrame.maxOutside = view === 'online' ? onlineState?.maxOutside
       : view === 'solo' && innings ? outsideLimit(innings.overs, innings.legalBalls) : undefined
@@ -1695,6 +1836,13 @@ function traceSwipe(x: number, y: number) {
   ui.swipeTip?.setAttribute('cy', String(y))
 }
 
+/** Gestures keep their world direction; handedness chooses the appropriate stroke family. */
+function playerSwipe(dx: number, dy: number, duration: number, viewport: number, mode: BattingMode, height?: number, line?: number) {
+  const hand = view === 'solo' && batterProfile().batting.hand === 'left' ? -1 : 1
+  const shot = swipeShot(dx * hand, dy, duration, viewport, mode, height, (line ?? 0) * hand)
+  return { ...shot, aim: shot.aim * hand }
+}
+
 ui.playfield.addEventListener('pointermove', (event) => {
   if (isBowling() || replaying) return
   if (pointer?.id === event.pointerId) {
@@ -1702,7 +1850,7 @@ ui.playfield.addEventListener('pointermove', (event) => {
     const dy = event.clientY - pointer.y
     traceSwipe(event.clientX, event.clientY)
     if (Math.hypot(dx, dy) > 12) {
-      const intent = swipeShot(dx, dy, event.timeStamp - pointer.at, Math.min(innerWidth, innerHeight), battingMode, live?.projectedContact.y, live?.projectedContact.x)
+      const intent = playerSwipe(dx, dy, event.timeStamp - pointer.at, Math.min(innerWidth, innerHeight), battingMode, live?.projectedContact.y, live?.projectedContact.x)
       aim = intent.aim - SHOT_ANGLES[activeShot]
       return
     }
@@ -1725,7 +1873,7 @@ ui.playfield.addEventListener('pointerup', (event) => {
   if (!pointer || pointer.id !== event.pointerId) return
   const dx = event.clientX - pointer.x
   const dy = event.clientY - pointer.y
-  const intent = swipeShot(dx, dy, event.timeStamp - pointer.at, Math.min(innerWidth, innerHeight), battingMode, live?.projectedContact.y, live?.projectedContact.x)
+  const intent = playerSwipe(dx, dy, event.timeStamp - pointer.at, Math.min(innerWidth, innerHeight), battingMode, live?.projectedContact.y, live?.projectedContact.x)
   activeShot = intent.kind
   aim = intent.aim - SHOT_ANGLES[intent.kind]
   mark('swipe')
@@ -1747,13 +1895,16 @@ ui.playfield.addEventListener('lostpointercapture', () => { pointer = undefined;
 document.addEventListener('keydown', (event) => {
   if (view === 'home' || event.repeat || event.altKey || event.metaKey || event.ctrlKey) return
   // The third umpire's report has to be answered. Do not pause or play under it.
-  if (ui.drsDialog.open || ui.fieldDialog.open || ui.settingsDialog.open || ui.scorecardDialog.open) return
+  if (playerSelection.open || ui.drsDialog.open || ui.fieldDialog.open || ui.settingsDialog.open || ui.scorecardDialog.open) return
   if (event.key === 'Escape' && !ui.overlay.open) {
     event.preventDefault()
     pause()
     return
   }
   if (paused || replaying || event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement) return
+  if (view === 'solo' && isBowling() && event.code === 'Space' && (phase === 'ready' || phase === 'dead')) {
+    event.preventDefault(); document.getElementById('bowl-execute')?.click(); return
+  }
   if (!ui.fieldingControls.hidden) {
     const command: FieldingCommand | undefined = event.code === 'KeyF' ? { type: 'chase' }
       : event.code === 'KeyQ' ? { type: 'throw', end: 'striker' } : event.code === 'KeyE' ? { type: 'throw', end: 'bowler' } : undefined
@@ -1788,11 +1939,11 @@ document.addEventListener('keydown', (event) => {
   }
   if (event.code === 'Space' && !utilityFocused && !isBowling() && phase === 'flight') {
     event.preventDefault()
-    battingInput(swipeShot(0, -180, 150, Math.min(innerWidth, innerHeight), battingMode, live?.projectedContact.y, live?.projectedContact.x), event.timeStamp)
+    battingInput(playerSwipe(0, -180, 150, Math.min(innerWidth, innerHeight), battingMode, live?.projectedContact.y, live?.projectedContact.x), event.timeStamp)
   }
   const index = Number(event.key) - 1
   if (Number.isInteger(index) && index >= 0 && index < 4) {
-    if (isBowling()) bowlButtons.get(DELIVERIES[index + Number(ui.deliveryBank.value) * 4])?.click()
+    if (isBowling()) { if (view === 'solo') bowlingHud.select(index); else bowlButtons.get(DELIVERIES[index + Number(ui.deliveryBank.value) * 4])?.click() }
   }
 })
 

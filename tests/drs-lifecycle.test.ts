@@ -8,6 +8,9 @@ import ts from 'typescript'
 import { applyDelivery, newInnings, type DeliveryOutcome, type Innings } from '../src/rules.ts'
 import { DEFAULT_LINEUP } from '../src/match-data.ts'
 import type { OnlineMode, OnlineSeat, OnlineSnapshot } from '../src/online-contract.ts'
+import { availableBatters, chooseAIBowler } from '../src/match-selection.ts'
+import { availableVariations } from '../src/bowling.ts'
+import type { PlayerProfile } from '../src/player-profile.ts'
 
 const require = createRequire(new URL('../src/main.ts', import.meta.url))
 // Execute the real controller, including its registered UI callbacks. Only its
@@ -50,6 +53,7 @@ function game() {
     return nodes.get(id)!
   }
   let now = 1000
+  let identity = 0
   let onlineCallbacks: { snapshot: (state: OnlineSnapshot, seat: OnlineSeat) => void } | undefined
   const platform = {
     // Boot is held at the platform boundary; tests call the actual start/home
@@ -67,6 +71,20 @@ function game() {
     './settings.ts': { ...settings, saveCareer() {}, saveSettings() {} },
     './stadium.ts': { VENUE_BOUNDARIES: { suncrest: { x: 65, z: 70 } }, VENUE_NAMES: { suncrest: 'Suncrest' } },
     './field-map.ts': { createFieldMap: () => ({ svg: new Node(), render() {} }) },
+    // Selection and release capture are browser adapters. The actual managed
+    // innings, eligibility, replacement and DRS controller still execute below.
+    './player-selection-ui.ts': { createPlayerSelection: () => ({
+      open: false, close() {},
+      openers(_players: PlayerProfile[], _state: Innings, choose: (a: number, b: number) => void) { choose(1, 2) },
+      batter(_players: PlayerProfile[], state: Innings, choose: (index: number) => void) { choose(availableBatters(state)[0]) },
+      bowler(players: PlayerProfile[], state: Innings, choose: (id: string) => void) { const p = chooseAIBowler(players, state, 'right'); if (p) choose(p.id) },
+    }) },
+    './bowling-hud.ts': { createBowlingHud: () => {
+      const controls = { variation: 'stock', line: .18, length: 6.2, power: .76, release: .8, movement: .65, side: 'over', batterHand: 'right' }
+      return { root: new Node(), controls, timing: false, reset() {}, advance() {}, feedback() {}, select() {}, startTiming() {}, finishTiming: () => .8,
+        configure(p: PlayerProfile) { const v = availableVariations(p).find(v => !v.locked); if (v) { controls.variation = v.id; controls.length = v.defaultLength } },
+      }
+    } },
     './online-client.ts': {
       connectOnline: (_handshake: unknown, callbacks: NonNullable<typeof onlineCallbacks>) => {
         onlineCallbacks = callbacks
@@ -80,17 +98,29 @@ function game() {
     exports: {}, require: (name: string) => name.endsWith('.css') ? {} : adapters[name] ?? require(name),
     document: { getElementById: node, querySelector: node, createElement: () => new Node(), addEventListener() {}, body: new Node() },
     window: {}, location: { search: '?seed=41', href: 'http://localhost/?seed=41' },
-    URL, URLSearchParams, Option: Node, navigator: {},
+    URL, URLSearchParams, Option: Node, navigator: {}, structuredClone,
+    crypto: { randomUUID: () => `h2-session-${++identity}` },
     performance: { now: () => now }, requestAnimationFrame() {},
     matchMedia: () => ({ addEventListener() {} }), console,
   })
   runInContext(controller, context, { filename: fileURLToPath(new URL('../src/main.ts', import.meta.url)) })
+  // Skip only the entrance's presentation clock. Calling the real preparation
+  // gate consumes the adapter's real choices before a DRS fixture is supplied.
+  runInContext(`function prepareTestBall() {
+    if (view === 'solo' && isBowling() && match?.selectedBowler) bowlingHud.configure(matchProfile(match.selectedBowler.playerId));
+    beginBall(true);
+    if (entranceAge !== undefined) { entranceAge = undefined; beginBall(true) }
+    if (!record && phase === 'ready' && !paused) {
+      if (view === 'solo' && isBowling() && match?.selectedBowler) bowlingHud.configure(matchProfile(match.selectedBowler.playerId));
+      beginBall(true);
+    }
+  }`, context)
   const run = <T = unknown>(source: string): T => runInContext(source, context)
-  const start = (mode = 'solo') => run(`start('${mode}')`)
+  const start = (mode = 'solo') => run(`start('${mode}'); prepareTestBall()`)
   const offer = (kind: 'caught' | 'lbw' = 'caught', overturned = false, marginal = false) => {
     // Supply a completed delivery at the simulation/controller boundary, so
     // rare reviews and the six-second expiry do not depend on random physics.
-    run(`setPhase('flight'); live = { timing: 'late', contact: 'edge', swingTick: null, contactTick: 1,
+    run(`if (!record && !replaying) prepareTestBall(); setPhase('flight'); live = { timing: 'late', contact: 'edge', swingTick: null, contactTick: 1,
       lbw: { tracking: { out: ${!overturned}, pitched: 'in-line', impact: 'in-line', wickets: 'hitting' }, portion: ${marginal ? 0.3 : 0.8} },
       outcome: { batRuns: 0, wide: 0, noBall: 0, byes: 0, legByes: 0,
         wicket: '${kind}', completedRuns: 0, reason: '${kind}', contact: 'edge' } };
@@ -199,7 +229,7 @@ test('H2: exhausted reviews stay exhausted during the innings and reset on resta
     app.offer()
     app.run('resolveReview(true)')
     app.continue()
-    app.run('beginBall()')
+    app.run('prepareTestBall()')
   }
   assert.equal(app.state().reviewsLeft, 0)
   app.offer()
@@ -312,7 +342,7 @@ test('H2: an innings transition renews the allowance and normal completion remat
   app.continue()
   assert.equal(app.state().reviewsLeft, 1)
   const first = app.run('match')
-  app.run(`while (!currentInnings().complete) { beginBall(); applyOutcome(${dot}) }`)
+  app.run(`while (!currentInnings().complete) { prepareTestBall(); applyOutcome(${dot}) }`)
   app.run('afterBall()')
   app.action('Take the field')
   assert.equal(app.run('match'), first, 'An innings change remains in the same match')
@@ -320,7 +350,7 @@ test('H2: an innings transition renews the allowance and normal completion remat
   assert.equal(app.state().pendingOutcome, undefined)
   assert.equal(app.state().reviewDeadline, 0)
   assert.equal(app.node('drs-actions').children.length, 0)
-  app.run(`beginBall(); applyOutcome({ ...${dot}, batRuns: 4, reason: 'boundary' }); afterBall()`)
+  app.run(`prepareTestBall(); applyOutcome({ ...${dot}, batRuns: 4, reason: 'boundary' }); afterBall()`)
   app.action('Play again')
   assert.notEqual(app.run('match'), first)
   assert.equal(app.score().attempts, 0)
@@ -337,7 +367,7 @@ test('H2: Training completion and Practice again create a fresh review lifecycle
   app.offer()
   app.run('resolveReview(true)')
   app.continue()
-  app.run(`while (!currentInnings().complete) { beginBall(); applyOutcome(${dot}) }`)
+  app.run(`while (!currentInnings().complete) { prepareTestBall(); applyOutcome(${dot}) }`)
   app.run('afterBall()')
   app.action('Practice again')
   assert.equal(app.state().reviewsLeft, 2)
@@ -360,7 +390,7 @@ test('H2: a new match cannot mutate the retained previous match\'s review state'
   app.offer()
   app.run('resolveReview(true)')
   app.continue()
-  app.run('beginBall()')
+  app.run('prepareTestBall()')
   app.offer()
   app.run('resolveReview(true)')
   app.continue()

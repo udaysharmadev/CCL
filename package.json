@@ -5,6 +5,9 @@
   "type": "module",
   "engines": { "node": ">=22.18.0" },
   "scripts": {
+    "test:bowling": "node scripts/bowling-browser.ts",
+    "test:bowling-animation": "node scripts/bowling-animation-browser.ts",
+    "test:bowling-presentation": "node scripts/bowling-presentation-browser.ts",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -26,6 +29,7 @@
     "test:presentation": "node scripts/presentation-browser.ts",
     "test:milestone": "node scripts/milestone-browser.ts",
     "test:match-presentation": "node scripts/match-presentation-browser.ts",
+    "test:squad": "node scripts/squad-browser.ts",
     "spike:authority": "node scripts/authority-spike.ts",
     "online": "node scripts/online-server.ts"
   },

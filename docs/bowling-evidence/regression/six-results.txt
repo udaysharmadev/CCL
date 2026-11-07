@@ -1,0 +1,1 @@
+Longest Six browser passed: five balls, 1815 points, ground-hit rejection, replay, pause, saved best and small viewport.

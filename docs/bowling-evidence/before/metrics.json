@@ -1,0 +1,605 @@
+{
+  "browser": "156.0.8078.81",
+  "softwareGpu": true,
+  "issues": [],
+  "warnings": [],
+  "captures": {
+    "01-home-desktop": {
+      "marks": {
+        "firstFrame": 6723
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 242877,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": null,
+      "presentationMs": null,
+      "renderMs": null,
+      "graphics": {
+        "calls": 295,
+        "triangles": 118026,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 1440,
+        "height": 900,
+        "geometries": 63,
+        "textures": 11,
+        "programs": 11,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "02-setup-desktop": {
+      "marks": {
+        "firstFrame": 6723
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 242877,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": null,
+      "presentationMs": null,
+      "renderMs": null,
+      "graphics": {
+        "calls": 295,
+        "triangles": 118026,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 1440,
+        "height": 900,
+        "geometries": 63,
+        "textures": 11,
+        "programs": 11,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "03-match-desktop": {
+      "marks": {
+        "firstFrame": 6723,
+        "firstPlay": 14100,
+        "firstRelease": 30553
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 243177,
+      "frameMs": {
+        "count": 50,
+        "p50": 589,
+        "p95": 1229.3,
+        "p99": 2263.9
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 50,
+        "p50": 0.1,
+        "p95": 1,
+        "p99": 16.3
+      },
+      "presentationMs": {
+        "count": 50,
+        "p50": 0.4,
+        "p95": 1.1,
+        "p99": 2.2
+      },
+      "renderMs": {
+        "count": 50,
+        "p50": 6.9,
+        "p95": 15.6,
+        "p99": 2243.2
+      },
+      "graphics": {
+        "calls": 315,
+        "triangles": 120216,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 1440,
+        "height": 771,
+        "geometries": 66,
+        "textures": 11,
+        "programs": 13,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "04-match-landscape": {
+      "marks": {
+        "firstFrame": 6723,
+        "firstPlay": 14100,
+        "firstRelease": 30553
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 243177,
+      "frameMs": {
+        "count": 61,
+        "p50": 583.3,
+        "p95": 1229.3,
+        "p99": 2263.9
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 61,
+        "p50": 0.1,
+        "p95": 0.9,
+        "p99": 16.3
+      },
+      "presentationMs": {
+        "count": 61,
+        "p50": 0.3,
+        "p95": 1,
+        "p99": 2.2
+      },
+      "renderMs": {
+        "count": 61,
+        "p50": 7,
+        "p95": 15.3,
+        "p99": 2243.2
+      },
+      "graphics": {
+        "calls": 336,
+        "triangles": 122352,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 800,
+        "height": 325,
+        "geometries": 71,
+        "textures": 11,
+        "programs": 13,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "layout-landscape": {
+      "score": {
+        "x": 0,
+        "y": 325,
+        "right": 800,
+        "bottom": 450
+      },
+      "loft": {
+        "x": 643,
+        "y": 270,
+        "right": 707,
+        "bottom": 324
+      },
+      "next": {
+        "x": 344.4609375,
+        "y": 284,
+        "right": 455.5390625,
+        "bottom": 324
+      },
+      "width": 800,
+      "height": 450
+    },
+    "04-match-portrait": {
+      "marks": {
+        "firstFrame": 6723,
+        "firstPlay": 14100,
+        "firstRelease": 30553
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 243177,
+      "frameMs": {
+        "count": 70,
+        "p50": 569.5,
+        "p95": 1229.3,
+        "p99": 2263.9
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 70,
+        "p50": 0,
+        "p95": 0.9,
+        "p99": 16.3
+      },
+      "presentationMs": {
+        "count": 70,
+        "p50": 0.3,
+        "p95": 1,
+        "p99": 2.2
+      },
+      "renderMs": {
+        "count": 70,
+        "p50": 6.6,
+        "p95": 15.3,
+        "p99": 2243.2
+      },
+      "graphics": {
+        "calls": 293,
+        "triangles": 118058,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 390,
+        "height": 693,
+        "geometries": 71,
+        "textures": 11,
+        "programs": 13,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "layout-portrait": {
+      "score": {
+        "x": 0,
+        "y": 693,
+        "right": 390,
+        "bottom": 844
+      },
+      "loft": {
+        "x": 243,
+        "y": 617,
+        "right": 306,
+        "bottom": 674
+      },
+      "next": {
+        "x": 12,
+        "y": 634,
+        "right": 123.078125,
+        "bottom": 674
+      },
+      "width": 390,
+      "height": 844
+    },
+    "quality-high": {
+      "marks": {
+        "firstFrame": 6723,
+        "firstPlay": 14100,
+        "firstRelease": 30553
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 243177,
+      "frameMs": {
+        "count": 73,
+        "p50": 569.5,
+        "p95": 1229.3,
+        "p99": 2263.9
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 73,
+        "p50": 0,
+        "p95": 0.9,
+        "p99": 16.3
+      },
+      "presentationMs": {
+        "count": 73,
+        "p50": 0.3,
+        "p95": 1,
+        "p99": 2.2
+      },
+      "renderMs": {
+        "count": 73,
+        "p50": 6.8,
+        "p95": 15.3,
+        "p99": 2243.2
+      },
+      "graphics": {
+        "calls": 316,
+        "triangles": 120222,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 1280,
+        "height": 591,
+        "geometries": 71,
+        "textures": 11,
+        "programs": 13,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "quality-medium": {
+      "marks": {
+        "firstFrame": 6723,
+        "firstPlay": 14100,
+        "firstRelease": 30553
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 243177,
+      "frameMs": {
+        "count": 73,
+        "p50": 569.5,
+        "p95": 1229.3,
+        "p99": 2263.9
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 73,
+        "p50": 0,
+        "p95": 0.9,
+        "p99": 16.3
+      },
+      "presentationMs": {
+        "count": 73,
+        "p50": 0.3,
+        "p95": 1,
+        "p99": 2.2
+      },
+      "renderMs": {
+        "count": 73,
+        "p50": 6.8,
+        "p95": 15.3,
+        "p99": 2243.2
+      },
+      "graphics": {
+        "calls": 316,
+        "triangles": 120222,
+        "quality": "medium",
+        "shadows": true,
+        "shadowSize": 1024,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 1280,
+        "height": 591,
+        "geometries": 71,
+        "textures": 9,
+        "programs": 13,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "quality-low": {
+      "marks": {
+        "firstFrame": 6723,
+        "firstPlay": 14100,
+        "firstRelease": 30553
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 243177,
+      "frameMs": {
+        "count": 73,
+        "p50": 569.5,
+        "p95": 1229.3,
+        "p99": 2263.9
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 73,
+        "p50": 0,
+        "p95": 0.9,
+        "p99": 16.3
+      },
+      "presentationMs": {
+        "count": 73,
+        "p50": 0.3,
+        "p95": 1,
+        "p99": 2.2
+      },
+      "renderMs": {
+        "count": 73,
+        "p50": 6.8,
+        "p95": 15.3,
+        "p99": 2243.2
+      },
+      "graphics": {
+        "calls": 316,
+        "triangles": 120222,
+        "quality": "low",
+        "shadows": false,
+        "shadowSize": 0,
+        "materialMode": "diffuse",
+        "materialVariants": 37,
+        "skyDetail": false,
+        "pixelRatio": 0.75,
+        "width": 960,
+        "height": 443,
+        "geometries": 71,
+        "textures": 9,
+        "programs": 13,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "performance": {
+      "marks": {
+        "firstFrame": 6723,
+        "firstPlay": 14100,
+        "firstRelease": 30553
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 243177,
+      "frameMs": {
+        "count": 83,
+        "p50": 562.6,
+        "p95": 736.1,
+        "p99": 2263.9
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 83,
+        "p50": 0,
+        "p95": 0.8,
+        "p99": 16.3
+      },
+      "presentationMs": {
+        "count": 83,
+        "p50": 0.3,
+        "p95": 1,
+        "p99": 3
+      },
+      "renderMs": {
+        "count": 83,
+        "p50": 6.5,
+        "p95": 13.6,
+        "p99": 2243.2
+      },
+      "graphics": {
+        "calls": 297,
+        "triangles": 118674,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 37,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 1280,
+        "height": 591,
+        "geometries": 71,
+        "textures": 11,
+        "programs": 13,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "05-home-portrait": {
+      "marks": {
+        "firstFrame": 5159
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 3000,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": null,
+      "presentationMs": null,
+      "renderMs": null,
+      "graphics": {
+        "calls": 297,
+        "triangles": 118130,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 390,
+        "height": 844,
+        "geometries": 63,
+        "textures": 11,
+        "programs": 11,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "06-setup-portrait": {
+      "marks": {
+        "firstFrame": 5159
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 3000,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": null,
+      "presentationMs": null,
+      "renderMs": null,
+      "graphics": {
+        "calls": 297,
+        "triangles": 118130,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 0,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 390,
+        "height": 844,
+        "geometries": 63,
+        "textures": 11,
+        "programs": 11,
+        "contextLost": false,
+        "disposed": false,
+        "contextReleased": false,
+        "boundary": null
+      }
+    }
+  }
+}

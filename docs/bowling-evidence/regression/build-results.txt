@@ -1,0 +1,18 @@
+
+> crazy-cricket-league@0.1.0 build
+> tsc --noEmit && vite build --configLoader native
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 45 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                  25.24 kB │ gzip:   7.33 kB
+dist/assets/index-BV9FHJw4.css  104.53 kB │ gzip:  22.70 kB
+dist/assets/index-D3aazfGB.js   795.20 kB │ gzip: 227.53 kB
+✓ built in 4.73s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

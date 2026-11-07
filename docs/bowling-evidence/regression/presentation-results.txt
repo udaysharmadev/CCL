@@ -1,0 +1,104 @@
+{
+  "passed": 4,
+  "errors": [],
+  "samples": {
+    "low": {
+      "frames": 37,
+      "durationMs": 5121.89999999851,
+      "fps": 7.223881762629252,
+      "p50ms": 139,
+      "p95ms": 167,
+      "graphics": {
+        "calls": 276,
+        "triangles": 81900,
+        "quality": "low",
+        "shadows": false,
+        "shadowSize": 0,
+        "materialMode": "diffuse",
+        "materialVariants": 47,
+        "skyDetail": false,
+        "pixelRatio": 0.75,
+        "width": 825,
+        "height": 473,
+        "geometries": 93,
+        "textures": 12,
+        "programs": 20,
+        "contextLost": false,
+        "disposed": false,
+        "actors": {
+          "batter": {
+            "id": "Hayes",
+            "hand": "right"
+          },
+          "bowler": {
+            "id": "Khan",
+            "arm": "left",
+            "stage": "mark",
+            "hand": [
+              1.2744110727863376,
+              0.9752815876127856,
+              26.822554630333343
+            ],
+            "release": {
+              "x": 0.92,
+              "y": 1.9000000000000001,
+              "z": 18.29
+            }
+          },
+          "jerseyTextures": 3
+        },
+        "contextReleased": false,
+        "boundary": null
+      }
+    },
+    "high": {
+      "frames": 15,
+      "durationMs": 5088.799999998882,
+      "fps": 2.94764974060747,
+      "p50ms": 395.79999999999563,
+      "p95ms": 437.3999999999978,
+      "graphics": {
+        "calls": 397,
+        "triangles": 128702,
+        "quality": "high",
+        "shadows": true,
+        "shadowSize": 2048,
+        "materialMode": "pbr",
+        "materialVariants": 47,
+        "skyDetail": true,
+        "pixelRatio": 1,
+        "width": 1100,
+        "height": 631,
+        "geometries": 93,
+        "textures": 14,
+        "programs": 22,
+        "contextLost": false,
+        "disposed": false,
+        "actors": {
+          "batter": {
+            "id": "Hayes",
+            "hand": "right"
+          },
+          "bowler": {
+            "id": "Khan",
+            "arm": "left",
+            "stage": "mark",
+            "hand": [
+              1.2744110727863376,
+              0.9752815876127856,
+              26.822554630333343
+            ],
+            "release": {
+              "x": 0.92,
+              "y": 1.9000000000000001,
+              "z": 18.29
+            }
+          },
+          "jerseyTextures": 3
+        },
+        "contextReleased": false,
+        "boundary": null
+      }
+    }
+  }
+}

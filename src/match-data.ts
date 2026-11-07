@@ -52,3 +52,7 @@ export function lineupError(names: string[]) {
 
 
 export const DEFAULT_LINEUP: string[] = ROSTER.slice(0, 11).map(({ name }) => name)
+
+/** Stable opponent IDs shared by local match setup and profile defaults. */
+export const OPPONENT_NAMES = ['Hayes', 'Reed', 'Ward', 'Mills', 'Cole', 'Nash', 'Bell', 'Frost', 'Pike', 'King', 'Banks']
+export const OPPONENT_BOWLERS = ['Ward', 'Cole', 'Mills', 'Bell', 'King']

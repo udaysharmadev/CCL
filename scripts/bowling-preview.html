@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>CCL bowling motion study</title><style>
+*{box-sizing:border-box}body{margin:0;background:#0c1724;color:#f7f3e7;font:14px system-ui}header{padding:16px 24px;border-bottom:1px solid #33435c}header b{color:#f0ca70}main{display:grid;grid-template-columns:repeat(4,1fr)}section{position:relative;height:365px;border:1px solid #33435c}h2{position:absolute;z-index:1;left:16px;top:5px;font-size:15px;text-shadow:0 1px 3px #000}h2 small{display:block;font-size:11px;color:#d3dce9;font-weight:400;margin-top:4px}canvas{width:100%;height:100%}footer{padding:12px 24px;color:#c6d1df}
+</style></head><body><header><b>CCL · ORIGINAL BOWLING ACTIONS</b> <span id="stage"></span></header><main></main><footer>Production athlete rig and release solver · real player profiles · physical delivery release locations · observational pose study</footer><script type="module">
+import * as THREE from 'three';
+import { athlete, bowlingPose, updateAthleteIdentity } from '/src/stadium.ts';
+import { defaultPlayerProfile, bowlingLabel } from '/src/player-profile.ts';
+import { createBowlingExecution, bowlingReleasePoint, availableVariations } from '/src/bowling.ts';
+const query=new URLSearchParams(location.search), progress=Number(query.get('progress')??.75), age=Number(query.get('age')??0), phase=query.has('age')?'flight':'windup';
+document.querySelector('#stage').textContent=`${phase==='windup'?`Preparation ${Math.round(progress*100)}%`:`Follow-through ${age.toFixed(2)}s`} · ${query.get('side')??'over'} the wicket`;
+window.poseMetrics=[];
+for(const id of ['Rao','Khan','Das','Sen','Patel','Shah','Dutt','Joshi']){
+ const panel=document.createElement('section');document.querySelector('main').append(panel);
+ const player=defaultPlayerProfile(id), execution=createBowlingExecution(player,{variation:availableVariations(player)[0].id,line:.15,length:5.5,power:.8,release:1,movement:.6,side:query.get('side')??'over',batterHand:'right'});
+ const release=bowlingReleasePoint(execution);
+ const title=document.createElement('h2');title.textContent=player.identity.displayName;const detail=document.createElement('small');detail.textContent=bowlingLabel(player)+' · '+player.bowling.action;title.append(detail);panel.append(title);
+ const scene=new THREE.Scene();scene.background=new THREE.Color('#607e78');scene.add(new THREE.HemisphereLight(0xffffff,0x233b36,2.6));const sun=new THREE.DirectionalLight(0xfff0d1,2.1);sun.position.set(-3,5,4);scene.add(sun);
+ const mat=color=>new THREE.MeshLambertMaterial({color});
+ const rig=athlete(scene,{shirt:mat(0x198f89),pants:mat(0x214d55),trim:mat(0xf6c963)},'bowler',1,new THREE.MeshBasicMaterial({color:0x304b40,transparent:true,opacity:.2}));
+ updateAthleteIdentity(rig,player);const motion=bowlingPose(rig,0,phase,progress,age,execution,release);rig.base.updateWorldMatrix(true,true);
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(12,30),mat(0x728c70));ground.rotation.x=-Math.PI/2;ground.position.set(0,-.015,18);scene.add(ground);
+ const crease=new THREE.Mesh(new THREE.BoxGeometry(3,.015,.03),mat(0xf5f0d4));crease.position.set(0,0,18.8);scene.add(crease);
+ const ball=new THREE.Mesh(new THREE.SphereGeometry(.076,12,8),mat(0xf7f2df));ball.position.copy(rig.arms[motion.armIndex].hand.getWorldPosition(new THREE.Vector3()));if(phase==='flight')ball.visible=false;scene.add(ball);
+ const camera=new THREE.PerspectiveCamera(32,panel.clientWidth/panel.clientHeight,.01,60);camera.position.set(rig.base.position.x+2.4,1.9,rig.base.position.z+3.5);camera.lookAt(rig.base.position.x,1.08,rig.base.position.z);
+ const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(panel.clientWidth,panel.clientHeight);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;panel.append(renderer.domElement);renderer.render(scene,camera);
+ window.poseMetrics.push({id,arm:player.bowling.arm,stage:motion.stage,release,hand:rig.arms[motion.armIndex].hand.getWorldPosition(new THREE.Vector3()).toArray(),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures});
+}
+window.ready=true;
+</script></body></html>

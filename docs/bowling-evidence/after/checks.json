@@ -1,0 +1,3890 @@
+{
+  "browser": "156.0.8078.4",
+  "checks": [
+    "non-bowling specialist unavailable with reason",
+    "fast bowler capabilities shown without spin variations",
+    "portrait bowling HUD inside viewport and above score strip",
+    "timed left-arm around-wicket delivery releases and scores through simulation",
+    "local replay preserves the recorded execution and does not rescore",
+    "six legal balls trigger selection and consecutive-over restriction",
+    "wrist spinner exposes and executes a real googly",
+    "opening pair selection carries left-handed identity into delivery",
+    "real wicket opens replacement, survivor identity retained and incoming batter enters",
+    "browser completed without console or page errors"
+  ],
+  "issues": [],
+  "evidence": {
+    "01-bowler-selection": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0,
+      "paused": true,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": true,
+      "bowler": null
+    },
+    "02-fast-hud": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.6240000000000004,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Khan"
+    },
+    "03-pitch-target": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.6560000000000005,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Khan"
+    },
+    "04-fast-mobile": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.7200000000000005,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Khan"
+    },
+    "05-fast-landscape": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.7840000000000006,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Khan"
+    },
+    "06-fast-runup": {
+      "phase": "windup",
+      "tick": null,
+      "contactTick": null,
+      "windup": 1.440000000000001,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": {
+        "variation": "stock",
+        "line": 0.42,
+        "length": 3.57,
+        "power": 0.76,
+        "release": 0.986,
+        "movement": 0.65,
+        "side": "around",
+        "batterHand": "right",
+        "workload": 0,
+        "version": 1,
+        "playerId": "Khan",
+        "arm": "left",
+        "type": "fast",
+        "action": "sling",
+        "attributes": {
+          "capability": "specialist",
+          "arm": "left",
+          "type": "fast",
+          "action": "sling",
+          "skill": 88,
+          "maxPace": 151,
+          "paceControl": 73,
+          "accuracy": 52,
+          "control": 77,
+          "swing": 45,
+          "reverseSwing": 71,
+          "seam": 80,
+          "yorker": 70,
+          "bouncer": 79,
+          "slowerBall": 77,
+          "spin": 22,
+          "flight": 30,
+          "drift": 22,
+          "turn": 25,
+          "variationMastery": 83,
+          "stamina": 92,
+          "consistency": 74
+        }
+      },
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Khan"
+    },
+    "07-fast-release": {
+      "phase": "flight",
+      "tick": 1,
+      "contactTick": 24,
+      "windup": 0.031,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": {
+        "variation": "stock",
+        "line": 0.42,
+        "length": 3.57,
+        "power": 0.76,
+        "release": 0.986,
+        "movement": 0.65,
+        "side": "around",
+        "batterHand": "right",
+        "workload": 0,
+        "version": 1,
+        "playerId": "Khan",
+        "arm": "left",
+        "type": "fast",
+        "action": "sling",
+        "attributes": {
+          "capability": "specialist",
+          "arm": "left",
+          "type": "fast",
+          "action": "sling",
+          "skill": 88,
+          "maxPace": 151,
+          "paceControl": 73,
+          "accuracy": 52,
+          "control": 77,
+          "swing": 45,
+          "reverseSwing": 71,
+          "seam": 80,
+          "yorker": 70,
+          "bouncer": 79,
+          "slowerBall": 77,
+          "spin": 22,
+          "flight": 30,
+          "drift": 22,
+          "turn": 25,
+          "variationMastery": 83,
+          "stamina": 92,
+          "consistency": 74
+        }
+      },
+      "release": {
+        "position": {
+          "x": 0.92,
+          "y": 1.9000000000000001,
+          "z": 18.29
+        },
+        "velocity": {
+          "x": -1.3365799646049654,
+          "y": -3.029901305399894,
+          "z": -39.8590297583827
+        }
+      },
+      "ball": {
+        "x": 0.8977385167945211,
+        "y": 1.8468103074184725,
+        "z": 17.62612567519282
+      },
+      "feedback": {
+        "quality": "Perfect release",
+        "details": "Target executed",
+        "lineError": 0.0019923709736474615,
+        "lengthError": -0.22353958639337757
+      },
+      "selection": false,
+      "bowler": "Khan"
+    },
+    "08-fast-flight": {
+      "phase": "flight",
+      "tick": 13,
+      "contactTick": 24,
+      "windup": 0.2230000000000001,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 1,
+        "nonStriker": 2,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": {
+        "variation": "stock",
+        "line": 0.42,
+        "length": 3.57,
+        "power": 0.76,
+        "release": 0.986,
+        "movement": 0.65,
+        "side": "around",
+        "batterHand": "right",
+        "workload": 0,
+        "version": 1,
+        "playerId": "Khan",
+        "arm": "left",
+        "type": "fast",
+        "action": "sling",
+        "attributes": {
+          "capability": "specialist",
+          "arm": "left",
+          "type": "fast",
+          "action": "sling",
+          "skill": 88,
+          "maxPace": 151,
+          "paceControl": 73,
+          "accuracy": 52,
+          "control": 77,
+          "swing": 45,
+          "reverseSwing": 71,
+          "seam": 80,
+          "yorker": 70,
+          "bouncer": 79,
+          "slowerBall": 77,
+          "spin": 22,
+          "flight": 30,
+          "drift": 22,
+          "turn": 25,
+          "variationMastery": 83,
+          "stamina": 92,
+          "consistency": 74
+        }
+      },
+      "release": {
+        "position": {
+          "x": 0.92,
+          "y": 1.9000000000000001,
+          "z": 18.29
+        },
+        "velocity": {
+          "x": -1.3365799646049654,
+          "y": -3.029901305399894,
+          "z": -39.8590297583827
+        }
+      },
+      "ball": {
+        "x": 0.6317537642455817,
+        "y": 0.9992565930673122,
+        "z": 9.694019517775084
+      },
+      "feedback": {
+        "quality": "Perfect release",
+        "details": "Target executed",
+        "lineError": 0.0019923709736474615,
+        "lengthError": -0.22353958639337757
+      },
+      "selection": false,
+      "bowler": "Khan"
+    },
+    "09-spin-hud": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.053000000000000005,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 2,
+        "wickets": 3,
+        "legalBalls": 6,
+        "attempts": 6,
+        "freeHit": false,
+        "striker": 2,
+        "nonStriker": 5,
+        "history": [
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "middle",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "collected",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 2,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 2,
+            "reason": "fielded",
+            "contact": "middle",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          }
+        ],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 3,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 2,
+            "balls": 2,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 1,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Khan",
+            "balls": 6,
+            "runs": 2,
+            "wickets": 3,
+            "maidens": 0,
+            "wides": 0,
+            "noBalls": 0,
+            "playerId": "Khan"
+          }
+        ],
+        "partnerships": [
+          {
+            "batter": 1,
+            "partner": 2,
+            "runs": 0,
+            "balls": 3
+          },
+          {
+            "batter": 3,
+            "partner": 2,
+            "runs": 2,
+            "balls": 2
+          },
+          {
+            "batter": 4,
+            "partner": 2,
+            "runs": 0,
+            "balls": 1
+          }
+        ],
+        "fallOfWickets": [
+          {
+            "batter": 1,
+            "runs": 0,
+            "overs": 3
+          },
+          {
+            "batter": 3,
+            "runs": 2,
+            "overs": 5
+          },
+          {
+            "batter": 4,
+            "runs": 2,
+            "overs": 6
+          }
+        ],
+        "lastOverRuns": [
+          0,
+          0,
+          0,
+          2,
+          0,
+          0
+        ],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Shah"
+    },
+    "10-spin-mobile": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.117,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 2,
+        "wickets": 3,
+        "legalBalls": 6,
+        "attempts": 6,
+        "freeHit": false,
+        "striker": 2,
+        "nonStriker": 5,
+        "history": [
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "middle",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "collected",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 2,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 2,
+            "reason": "fielded",
+            "contact": "middle",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          }
+        ],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 3,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 2,
+            "balls": 2,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 1,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Khan",
+            "balls": 6,
+            "runs": 2,
+            "wickets": 3,
+            "maidens": 0,
+            "wides": 0,
+            "noBalls": 0,
+            "playerId": "Khan"
+          }
+        ],
+        "partnerships": [
+          {
+            "batter": 1,
+            "partner": 2,
+            "runs": 0,
+            "balls": 3
+          },
+          {
+            "batter": 3,
+            "partner": 2,
+            "runs": 2,
+            "balls": 2
+          },
+          {
+            "batter": 4,
+            "partner": 2,
+            "runs": 0,
+            "balls": 1
+          }
+        ],
+        "fallOfWickets": [
+          {
+            "batter": 1,
+            "runs": 0,
+            "overs": 3
+          },
+          {
+            "batter": 3,
+            "runs": 2,
+            "overs": 5
+          },
+          {
+            "batter": 4,
+            "runs": 2,
+            "overs": 6
+          }
+        ],
+        "lastOverRuns": [
+          0,
+          0,
+          0,
+          2,
+          0,
+          0
+        ],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Shah"
+    },
+    "11-spin-flight": {
+      "phase": "flight",
+      "tick": 11,
+      "contactTick": 52,
+      "windup": 0.18700000000000006,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 2,
+        "wickets": 3,
+        "legalBalls": 6,
+        "attempts": 6,
+        "freeHit": false,
+        "striker": 2,
+        "nonStriker": 5,
+        "history": [
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "middle",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "collected",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 2,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 2,
+            "reason": "fielded",
+            "contact": "middle",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "caught",
+            "completedRuns": 0,
+            "reason": "caught",
+            "contact": "edge",
+            "padContact": false,
+            "shotOffered": true,
+            "bowler": "Khan",
+            "bowlerId": "Khan"
+          }
+        ],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Hayes",
+            "runs": 0,
+            "balls": 3,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Hayes"
+          },
+          {
+            "name": "Reed",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reed"
+          },
+          {
+            "name": "Ward",
+            "runs": 2,
+            "balls": 2,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Ward"
+          },
+          {
+            "name": "Mills",
+            "runs": 0,
+            "balls": 1,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "caught",
+            "dismissalText": "caught",
+            "playerId": "Mills"
+          },
+          {
+            "name": "Cole",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Cole"
+          },
+          {
+            "name": "Nash",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Nash"
+          },
+          {
+            "name": "Bell",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Bell"
+          },
+          {
+            "name": "Frost",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Frost"
+          },
+          {
+            "name": "Pike",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Pike"
+          },
+          {
+            "name": "King",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "King"
+          },
+          {
+            "name": "Banks",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Banks"
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Khan",
+            "balls": 6,
+            "runs": 2,
+            "wickets": 3,
+            "maidens": 0,
+            "wides": 0,
+            "noBalls": 0,
+            "playerId": "Khan"
+          }
+        ],
+        "partnerships": [
+          {
+            "batter": 1,
+            "partner": 2,
+            "runs": 0,
+            "balls": 3
+          },
+          {
+            "batter": 3,
+            "partner": 2,
+            "runs": 2,
+            "balls": 2
+          },
+          {
+            "batter": 4,
+            "partner": 2,
+            "runs": 0,
+            "balls": 1
+          }
+        ],
+        "fallOfWickets": [
+          {
+            "batter": 1,
+            "runs": 0,
+            "overs": 3
+          },
+          {
+            "batter": 3,
+            "runs": 2,
+            "overs": 5
+          },
+          {
+            "batter": 4,
+            "runs": 2,
+            "overs": 6
+          }
+        ],
+        "lastOverRuns": [
+          0,
+          0,
+          0,
+          2,
+          0,
+          0
+        ],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": {
+        "variation": "googly",
+        "line": 0.42,
+        "length": 5.2,
+        "power": 0.76,
+        "release": 0.986,
+        "movement": 0.65,
+        "side": "around",
+        "batterHand": "left",
+        "workload": 0,
+        "version": 1,
+        "playerId": "Shah",
+        "arm": "right",
+        "type": "leg-spin",
+        "action": "wrist-spin",
+        "attributes": {
+          "capability": "specialist",
+          "arm": "right",
+          "type": "leg-spin",
+          "action": "wrist-spin",
+          "skill": 90,
+          "maxPace": 92,
+          "paceControl": 73,
+          "accuracy": 78,
+          "control": 77,
+          "swing": 20,
+          "reverseSwing": 0,
+          "seam": 22,
+          "yorker": 15,
+          "bouncer": 15,
+          "slowerBall": 35,
+          "spin": 91,
+          "flight": 80,
+          "drift": 86,
+          "turn": 93,
+          "variationMastery": 85,
+          "stamina": 94,
+          "consistency": 74
+        }
+      },
+      "release": {
+        "position": {
+          "x": -0.92,
+          "y": 1.95,
+          "z": 18.29
+        },
+        "velocity": {
+          "x": 0.6357074786495179,
+          "y": 0.21087522067218684,
+          "z": -19.861036019111054
+        }
+      },
+      "ball": {
+        "x": -0.7987138370266461,
+        "y": 1.808931976306871,
+        "z": 14.656032571694857
+      },
+      "feedback": {
+        "quality": "Perfect release",
+        "details": "Target executed",
+        "lineError": 0.04911259349441888,
+        "lengthError": 0.4781185544734985
+      },
+      "selection": false,
+      "bowler": "Shah"
+    },
+    "12-batter-entrance": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.5440000000000004,
+      "paused": false,
+      "replaying": false,
+      "entrance": 0.5440000000000004,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 3,
+        "nonStriker": 1,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Mehta",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mehta"
+          },
+          {
+            "name": "Rao",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Rao"
+          },
+          {
+            "name": "Singh",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Singh"
+          },
+          {
+            "name": "Iyer",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Iyer"
+          },
+          {
+            "name": "Patel",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Patel"
+          },
+          {
+            "name": "Khan",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Khan"
+          },
+          {
+            "name": "Shah",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Shah"
+          },
+          {
+            "name": "Gill",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Gill"
+          },
+          {
+            "name": "Das",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Das"
+          },
+          {
+            "name": "Reddy",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reddy"
+          },
+          {
+            "name": "Joshi",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Joshi"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            3,
+            1
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": null
+    },
+    "13-left-handed-stance": {
+      "phase": "windup",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.023,
+      "paused": false,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 0,
+        "wickets": 0,
+        "legalBalls": 0,
+        "attempts": 0,
+        "freeHit": false,
+        "striker": 3,
+        "nonStriker": 1,
+        "history": [],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 0,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Mehta",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Mehta"
+          },
+          {
+            "name": "Rao",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Rao"
+          },
+          {
+            "name": "Singh",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Singh"
+          },
+          {
+            "name": "Iyer",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Iyer"
+          },
+          {
+            "name": "Patel",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Patel"
+          },
+          {
+            "name": "Khan",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Khan"
+          },
+          {
+            "name": "Shah",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Shah"
+          },
+          {
+            "name": "Gill",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Gill"
+          },
+          {
+            "name": "Das",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Das"
+          },
+          {
+            "name": "Reddy",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reddy"
+          },
+          {
+            "name": "Joshi",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Joshi"
+          }
+        ],
+        "bowling": [],
+        "partnerships": [],
+        "fallOfWickets": [],
+        "lastOverRuns": [],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            3,
+            1
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": {
+        "variation": "off-break",
+        "line": 0.06999999999999998,
+        "length": 5.1,
+        "power": 0.7405999999999999,
+        "release": 0.81525,
+        "movement": 0.55,
+        "side": "over",
+        "batterHand": "left",
+        "workload": 0,
+        "version": 1,
+        "playerId": "Cole",
+        "arm": "right",
+        "type": "off-spin",
+        "action": "finger-spin",
+        "attributes": {
+          "capability": "specialist",
+          "arm": "right",
+          "type": "off-spin",
+          "action": "finger-spin",
+          "skill": 89,
+          "maxPace": 92,
+          "paceControl": 73,
+          "accuracy": 90,
+          "control": 77,
+          "swing": 20,
+          "reverseSwing": 0,
+          "seam": 22,
+          "yorker": 15,
+          "bouncer": 15,
+          "slowerBall": 35,
+          "spin": 90,
+          "flight": 80,
+          "drift": 85,
+          "turn": 92,
+          "variationMastery": 84,
+          "stamina": 93,
+          "consistency": 74
+        }
+      },
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Cole"
+    },
+    "14-wicket-replacement": {
+      "phase": "dead",
+      "tick": 31,
+      "contactTick": 27,
+      "windup": 1.8000000000000005,
+      "paused": true,
+      "replaying": false,
+      "entrance": null,
+      "innings": {
+        "runs": 1,
+        "wickets": 1,
+        "legalBalls": 7,
+        "attempts": 8,
+        "freeHit": false,
+        "striker": 0,
+        "nonStriker": 3,
+        "history": [
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 1,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "bowled",
+            "completedRuns": 0,
+            "reason": "bowled",
+            "contact": "miss",
+            "padContact": true,
+            "shotOffered": false,
+            "bowler": "Mills",
+            "bowlerId": "Mills"
+          }
+        ],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 1,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Mehta",
+            "runs": 0,
+            "balls": 1,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "bowled",
+            "dismissalText": "bowled",
+            "playerId": "Mehta"
+          },
+          {
+            "name": "Rao",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Rao"
+          },
+          {
+            "name": "Singh",
+            "runs": 0,
+            "balls": 6,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Singh"
+          },
+          {
+            "name": "Iyer",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Iyer"
+          },
+          {
+            "name": "Patel",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Patel"
+          },
+          {
+            "name": "Khan",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Khan"
+          },
+          {
+            "name": "Shah",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Shah"
+          },
+          {
+            "name": "Gill",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Gill"
+          },
+          {
+            "name": "Das",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Das"
+          },
+          {
+            "name": "Reddy",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reddy"
+          },
+          {
+            "name": "Joshi",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Joshi"
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Cole",
+            "balls": 6,
+            "runs": 1,
+            "wickets": 0,
+            "maidens": 0,
+            "wides": 1,
+            "noBalls": 0,
+            "playerId": "Cole"
+          },
+          {
+            "name": "Mills",
+            "balls": 1,
+            "runs": 0,
+            "wickets": 1,
+            "maidens": 0,
+            "wides": 0,
+            "noBalls": 0,
+            "playerId": "Mills"
+          }
+        ],
+        "partnerships": [
+          {
+            "batter": 3,
+            "partner": 1,
+            "runs": 1,
+            "balls": 7
+          }
+        ],
+        "fallOfWickets": [
+          {
+            "batter": 1,
+            "runs": 1,
+            "overs": 7
+          }
+        ],
+        "lastOverRuns": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            3,
+            1
+          ],
+          "pendingBatter": "striker"
+        }
+      },
+      "execution": {
+        "variation": "yorker",
+        "line": 0.009999999999999981,
+        "length": 1.3,
+        "power": 0.8525999999999999,
+        "release": 0.81525,
+        "movement": 0.6950000000000001,
+        "side": "over",
+        "batterHand": "right",
+        "workload": 0,
+        "version": 1,
+        "playerId": "Mills",
+        "arm": "left",
+        "type": "medium-fast",
+        "action": "smooth",
+        "attributes": {
+          "capability": "specialist",
+          "arm": "left",
+          "type": "medium-fast",
+          "action": "smooth",
+          "skill": 85,
+          "maxPace": 136,
+          "paceControl": 73,
+          "accuracy": 90,
+          "control": 77,
+          "swing": 39,
+          "reverseSwing": 78,
+          "seam": 71,
+          "yorker": 77,
+          "bouncer": 74,
+          "slowerBall": 79,
+          "spin": 22,
+          "flight": 30,
+          "drift": 22,
+          "turn": 25,
+          "variationMastery": 80,
+          "stamina": 89,
+          "consistency": 74
+        }
+      },
+      "release": {
+        "position": {
+          "x": -0.48,
+          "y": 2.06,
+          "z": 18.29
+        },
+        "velocity": {
+          "x": 0.7500849133185515,
+          "y": -2.1552123162823245,
+          "z": -36.13581498029543
+        }
+      },
+      "ball": {
+        "x": -0.10178330626096388,
+        "y": 0.14521577365287838,
+        "z": 0
+      },
+      "feedback": {
+        "quality": "Good release",
+        "details": "Target executed",
+        "lineError": 0.15125419871828005,
+        "lengthError": 0.6647440853376478
+      },
+      "selection": true,
+      "bowler": "Mills"
+    },
+    "15-replacement-entry": {
+      "phase": "ready",
+      "tick": null,
+      "contactTick": null,
+      "windup": 0.4800000000000003,
+      "paused": false,
+      "replaying": false,
+      "entrance": 0.4800000000000003,
+      "innings": {
+        "runs": 1,
+        "wickets": 1,
+        "legalBalls": 7,
+        "attempts": 8,
+        "freeHit": false,
+        "striker": 2,
+        "nonStriker": 3,
+        "history": [
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 1,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": null,
+            "completedRuns": 0,
+            "reason": "fielded",
+            "contact": "miss",
+            "padContact": false,
+            "shotOffered": false,
+            "bowler": "Cole",
+            "bowlerId": "Cole"
+          },
+          {
+            "batRuns": 0,
+            "wide": 0,
+            "noBall": 0,
+            "byes": 0,
+            "legByes": 0,
+            "wicket": "bowled",
+            "completedRuns": 0,
+            "reason": "bowled",
+            "contact": "miss",
+            "padContact": true,
+            "shotOffered": false,
+            "bowler": "Mills",
+            "bowlerId": "Mills"
+          }
+        ],
+        "complete": false,
+        "overs": 2,
+        "extras": {
+          "wide": 1,
+          "noBall": 0,
+          "byes": 0,
+          "legByes": 0,
+          "penalty": 0
+        },
+        "batting": [
+          {
+            "name": "Mehta",
+            "runs": 0,
+            "balls": 1,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": true,
+            "dismissal": "bowled",
+            "dismissalText": "bowled",
+            "playerId": "Mehta"
+          },
+          {
+            "name": "Rao",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Rao"
+          },
+          {
+            "name": "Singh",
+            "runs": 0,
+            "balls": 6,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Singh"
+          },
+          {
+            "name": "Iyer",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Iyer"
+          },
+          {
+            "name": "Patel",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Patel"
+          },
+          {
+            "name": "Khan",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Khan"
+          },
+          {
+            "name": "Shah",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Shah"
+          },
+          {
+            "name": "Gill",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Gill"
+          },
+          {
+            "name": "Das",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Das"
+          },
+          {
+            "name": "Reddy",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Reddy"
+          },
+          {
+            "name": "Joshi",
+            "runs": 0,
+            "balls": 0,
+            "fours": 0,
+            "sixes": 0,
+            "dismissed": false,
+            "dismissal": null,
+            "dismissalText": "not out",
+            "playerId": "Joshi"
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Cole",
+            "balls": 6,
+            "runs": 1,
+            "wickets": 0,
+            "maidens": 0,
+            "wides": 1,
+            "noBalls": 0,
+            "playerId": "Cole"
+          },
+          {
+            "name": "Mills",
+            "balls": 1,
+            "runs": 0,
+            "wickets": 1,
+            "maidens": 0,
+            "wides": 0,
+            "noBalls": 0,
+            "playerId": "Mills"
+          }
+        ],
+        "partnerships": [
+          {
+            "batter": 3,
+            "partner": 1,
+            "runs": 1,
+            "balls": 7
+          }
+        ],
+        "fallOfWickets": [
+          {
+            "batter": 1,
+            "runs": 1,
+            "overs": 7
+          }
+        ],
+        "lastOverRuns": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "selection": {
+          "battingOrder": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "entered": [
+            3,
+            1,
+            2
+          ],
+          "pendingBatter": null
+        }
+      },
+      "execution": null,
+      "release": null,
+      "ball": null,
+      "feedback": null,
+      "selection": false,
+      "bowler": "Mills"
+    },
+    "telemetry": {
+      "marks": {
+        "firstFrame": 7,
+        "firstPlay": 7,
+        "firstRelease": 4545
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 2,
+        "firstRelease": 15
+      },
+      "transferBytes": 0,
+      "frameMs": {
+        "count": 1800,
+        "p50": 16,
+        "p95": 120,
+        "p99": 120
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "simulationMs": {
+        "count": 1800,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "presentationMs": {
+        "count": 1800,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "renderMs": {
+        "count": 1800,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "graphics": {
+        "calls": 173,
+        "triangles": 70370,
+        "quality": "low",
+        "shadows": false,
+        "shadowSize": 0,
+        "materialMode": "diffuse",
+        "materialVariants": 47,
+        "skyDetail": false,
+        "pixelRatio": 0.75,
+        "width": 825,
+        "height": 473,
+        "geometries": 105,
+        "textures": 12,
+        "programs": 21,
+        "contextLost": false,
+        "disposed": false,
+        "actors": {
+          "batter": {
+            "id": "Rao",
+            "hand": "right"
+          },
+          "bowler": {
+            "id": "Mills",
+            "arm": "left",
+            "stage": "mark",
+            "hand": [
+              0.3933354337240925,
+              0.9752815876127856,
+              24.22255463033334
+            ],
+            "release": null
+          },
+          "jerseyTextures": 3
+        },
+        "contextReleased": false,
+        "boundary": null
+      }
+    }
+  }
+}

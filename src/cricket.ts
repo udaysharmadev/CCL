@@ -1,5 +1,7 @@
 import type { Contact, DeadBallReason, DeliveryOutcome, Wicket } from './rules.ts'
 import { judgeExtras, judgeLbw, projectToStumps, LEG_STUMP, OFF_STUMP } from './laws.ts'
+import { bowlingKind, resolveBowling, releaseFeedback, type BowlingExecution } from './bowling.ts'
+import type { PlayerProfile } from './player-profile.ts'
 
 export const DT = 1 / 60
 export const PITCH_LENGTH = 20.12
@@ -86,6 +88,15 @@ export type DeliveryOptions = {
   fieldingMode?: 'manual'
   /** The name of the bowler, used to attribute the figures on the scorecard. */
   bowler?: string
+  /** Stable roster identity. Display names remain snapshots on the scorecard. */
+  bowlerId?: string
+  /** New local bowling controls; absent keeps historical/online physics bit exact. */
+  bowling?: BowlingExecution
+  /** New local batting model. Old recordings default to right-handed. */
+  batterHand?: 'right' | 'left'
+  /** Immutable local batting attributes. Omitted by old and online replays. */
+  batting?: Readonly<PlayerProfile['batting']>
+  fielding?: Readonly<{ fielders: readonly Readonly<PlayerProfile['fielding']>[]; keeper: Readonly<PlayerProfile['fielding']> }>
   /** How worn the pitch is, from 0 for fresh to 1 for a used pitch. */
   pitchWear?: number
   /** The running pace of the two batters as a multiplier on the shared pace. */
@@ -323,7 +334,7 @@ const WEATHER: Readonly<Record<WeatherPreset, { swing: number; wind?: number; se
 }
 
 type Motion = { ball: Vec3; velocity: Vec3; grounded: boolean }
-type Ground = { drag: number; restitution: number; turn: number; swing?: number; wind?: number; rollDrag?: number }
+type Ground = { drag: number; restitution: number; turn: number; swing?: number; wind?: number; rollDrag?: number; lateSwing?: boolean; turnImpulse?: number }
 type Interception = { index: number; point: Vec3; tick: number }
 
 function clamp(value: number, low: number, high: number) {
@@ -399,6 +410,7 @@ function advance(motion: Motion, ground: Ground) {
   const rolling = velocity.y === 0 && ball.y === BALL_RADIUS
   const drag = rolling ? ground.rollDrag ?? 0.58 : ground.drag * speed
   let lateral = motion.grounded ? ground.turn : ground.swing ?? 0
+  if (!motion.grounded && ground.lateSwing) lateral *= Math.max(0, 1 - ball.z / 18.29) ** 2 * 3
   if (!rolling && ground.wind) lateral += ground.wind
   velocity.x += (lateral - velocity.x * drag) * DT
   velocity.z -= velocity.z * drag * DT
@@ -407,6 +419,7 @@ function advance(motion: Motion, ground: Ground) {
   }
   const newHeight = ball.y + velocity.y * DT
   if (newHeight <= BALL_RADIUS && velocity.y < 0) {
+    if (!motion.grounded && ground.turnImpulse) velocity.x += ground.turnImpulse
     const hit = (ball.y - BALL_RADIUS) / (ball.y - newHeight)
     const remainder = 1 - hit
     const retention = motion.grounded ? 0.87 : 0.93
@@ -493,6 +506,8 @@ export class Delivery implements Motion {
   readonly ball: Vec3
   readonly velocity: Vec3
   readonly manualRunning: boolean
+  readonly bowling: BowlingExecution | undefined
+  readonly release: Readonly<{ position: Readonly<Vec3>; velocity: Readonly<Vec3> }>
   tick = 0
   phase: 'flight' | 'field' | 'dead' = 'flight'
   action: DeliveryAction = 'approach'
@@ -537,6 +552,7 @@ export class Delivery implements Motion {
   private readonly outfieldGround: Ground
   private readonly boundary: BoundaryDimensions
   private readonly noBall: boolean
+  private readonly noBallReason: 'front-foot' | 'dangerous-delivery' | undefined
   private readonly freeHit: boolean
   private readonly drift: number
   private readonly missDistance: number
@@ -572,6 +588,18 @@ export class Delivery implements Motion {
     this.kind = options.kind
     this.seed = options.seed >>> 0
     this.options = options
+    if (options.batting && (!['left', 'right'].includes(options.batting.hand) ||
+        ['skill', 'power', 'timing', 'technique', 'shotControl', 'running', 'consistency', 'aggression'].some(key => {
+          const value = options.batting![key as keyof PlayerProfile['batting']]
+          return typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100
+        }))) throw new Error('Invalid batting attributes.')
+    if (options.fielding && (options.fielding.fielders.length !== 9 || [...options.fielding.fielders, options.fielding.keeper].some(f =>
+      !f || ['rating', 'catching', 'throwingAccuracy', 'throwingPower', 'agility', 'reflexes', 'groundFielding', 'wicketkeeping'].some(key => {
+        const value = f[key as keyof PlayerProfile['fielding']]
+        return typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100
+      })))) throw new Error('Invalid fielding attributes.')
+    this.bowling = options.bowling
+    if (this.bowling && bowlingKind(this.bowling) !== options.kind) throw new Error('Bowling snapshot and delivery kind disagree.')
     // Separate generators keep the fumble and the fielding decisions
     // independent of the delivery draw while staying reproducible from the seed.
     this.fumbleRandom = seededRandom((this.seed ^ 0x5f3a91c7) >>> 0)
@@ -594,6 +622,27 @@ export class Delivery implements Motion {
     }
     const weather = WEATHER[options.weather ?? 'clear']
     const spin = isSpinDelivery(this.kind)
+    if (options.bowling) {
+      const execution = resolveBowling(options.bowling, random)
+      const speed = execution.speed / (1 + execution.flight * .24)
+      const bounceTime = (execution.release.z - execution.length) / speed
+      const swing = execution.swing * weather.swing
+      const turn = execution.turn * (spin ? pitch.spin : pitch.seam * weather.seam)
+      this.noBall = execution.noBall
+      this.noBallReason = execution.noBall ? 'front-foot' : undefined
+      this.drift = (random() - .5) * .23
+      this.missDistance = spin ? 1.02 : 1.11
+      this.bowlingGround = { drag: .001, restitution: execution.restitution * pitch.bounce,
+        turn, swing, wind: weather.wind, rollDrag: pitch.rollDrag, lateSwing: execution.lateSwing, turnImpulse: turn * (spin ? .62 : .35) }
+      this.outfieldGround = weather.wind ? { ...OUTFIELD, wind: weather.wind } : OUTFIELD
+      this.ball = { ...execution.release }
+      this.velocity = {
+        // Aim at the bounce target. Post-bounce movement is never cancelled out.
+        x: (execution.line - execution.release.x - .5 * swing * bounceTime ** 2 * (execution.lateSwing ? .28 : 1)) / bounceTime,
+        y: (BALL_RADIUS - execution.release.y + GRAVITY * bounceTime ** 2 / 2) / bounceTime,
+        z: -speed,
+      }
+    } else {
     const effort = clamp(options.effort ?? 0.63, 0, 1)
     const randomLine = (random() - 0.5) * 1.06
     const releaseSide = random() < 0.5 ? -1 : 1
@@ -623,6 +672,8 @@ export class Delivery implements Motion {
       y: (BALL_RADIUS - releaseY + GRAVITY * bounceTime ** 2 / 2) / bounceTime,
       z: -speed,
     }
+    }
+    this.release = Object.freeze({ position: Object.freeze({ ...this.ball }), velocity: Object.freeze({ ...this.velocity }) })
     if (spin) this.keeper.z = -2.2
 
     // Run the same fixed-step bowling model ahead for the swing cue. Physics
@@ -641,7 +692,23 @@ export class Delivery implements Motion {
       tick++
     }
     this.projectedContact = atZ(previous, forecast.ball, CONTACT_Z)
+    if (this.bowling && this.projectedContact.y > 1.85) {
+      this.noBall = true
+      this.noBallReason = 'dangerous-delivery'
+    }
     this.contactTick = tick - CONTACT_LEAD
+  }
+
+  get bowlingFeedback() {
+    return this.bowling ? releaseFeedback(this.bowling, this.pitchPoint, this.projectedContact) : null
+  }
+
+  private get battingHandSign() { return (this.options.batterHand ?? this.options.batting?.hand ?? this.bowling?.batterHand) === 'left' ? -1 : 1 }
+
+  private fielderAttributes(index: number) { return index === this.fielders.length ? this.options.fielding?.keeper : this.options.fielding?.fielders[index] }
+  private fielderSpeed(index: number) {
+    const stats = this.fielderAttributes(index)
+    return (index === this.fielders.length ? KEEPER_SPEED : FIELDER_SPEED) * (stats ? .67 + stats.agility * .0044 : 1)
   }
 
   swing(input: ShotInput): boolean {
@@ -782,7 +849,7 @@ export class Delivery implements Motion {
     // A batter who has set off backing up keeps moving while the ball is in flight.
     if (this.manualRunning) this.advanceRunners()
     if (this.ball.z < 4) {
-      moveToward(this.keeper, { x: this.projectedContact.x, y: 0, z: this.keeper.z }, KEEPER_SPEED)
+      moveToward(this.keeper, { x: this.projectedContact.x, y: 0, z: this.keeper.z }, this.fielderSpeed(this.fielders.length))
     }
     if (previous.z > CONTACT_Z && this.ball.z <= CONTACT_Z) {
       this.contactEventTick = this.tick
@@ -875,7 +942,8 @@ export class Delivery implements Motion {
   private fumbles() {
     const rising = this.velocity.y > 0.2
     const quick = Math.abs(this.velocity.z) > 26
-    const chance = (rising ? FUMBLE_RISING : FUMBLE_FLAT) * (quick ? 1.3 : 1)
+    const keeping = this.options.fielding?.keeper
+    const chance = (rising ? FUMBLE_RISING : FUMBLE_FLAT) * (quick ? 1.3 : 1) * (keeping ? 1.65 - (keeping.wicketkeeping + keeping.reflexes) * .0055 : 1)
     return this.fumbleRandom() < chance
   }
 
@@ -886,7 +954,8 @@ export class Delivery implements Motion {
    */
   private resolvePad(impact: Vec3) {
     this.contact = 'miss'
-    if (impact.y > PAD_TOP || impact.x < PAD_MIN_X || impact.x > PAD_MAX_X) return
+    const relativeX = impact.x * this.battingHandSign
+    if (impact.y > PAD_TOP || relativeX < PAD_MIN_X || relativeX > PAD_MAX_X) return
     this.padContact = true
     this.padImpact = { ...impact }
     // The path the ball would have taken without the pad in the way.
@@ -916,10 +985,10 @@ export class Delivery implements Motion {
     const projection = this.lbwProjection
     const impact = this.padImpact
     if (!projection || !impact) return
-    const pitchX = this.pitchPoint?.x ?? null
+    const pitchX = this.pitchPoint ? this.pitchPoint.x * this.battingHandSign : null
     const facts = {
       pitchX,
-      impactX: impact.x,
+      impactX: impact.x * this.battingHandSign,
       batFirst: false,
       strokeOffered: this.shotOffered,
       wouldHitStumps: projection.hits,
@@ -928,7 +997,7 @@ export class Delivery implements Motion {
     // Ball tracking sees the exact impact. The on-field umpire judges it by eye
     // and can be a few centimetres out, which is what a review exists to fix.
     const tracking = judgeLbw(facts)
-    const perceived = judgeLbw({ ...facts, impactX: impact.x + (this.fieldRandom() - 0.5) * 0.09 })
+    const perceived = judgeLbw({ ...facts, impactX: facts.impactX + (this.fieldRandom() - 0.5) * 0.09 })
     this.lbw = {
       out: perceived.out,
       reason: perceived.reason,
@@ -954,12 +1023,15 @@ export class Delivery implements Motion {
     const error = this.swingTick - this.contactTick
     const distanceFromIdeal = Math.abs(error)
     // The contact window can be widened or tightened by the player.
-    const window = Math.max(0.4, this.options.timingWindow ?? 1)
+    const batting = this.options.batting
+    const consistency = batting ? 1 - (1 - batting.consistency / 100) * (((this.seed >>> 17) % 11) / 11) * .16 : 1
+    const talentWindow = batting ? (.62 + batting.timing * .0032 + batting.technique * .0014 + batting.skill * .0012) * consistency : 1
+    const window = Math.max(0.4, (this.options.timingWindow ?? 1) * talentWindow)
     this.timing = distanceFromIdeal <= window ? 'perfect'
       : distanceFromIdeal <= window * 3 ? 'good' : error < 0 ? 'early' : 'late'
     const stroke = STROKES[this.input.kind]
-    const heightError = Math.abs(impact.y - stroke.height) / stroke.tolerance
-    const lineError = Math.abs(impact.x - (stroke.line ?? 0)) / 0.96
+    const heightError = Math.abs(impact.y - stroke.height) / (stroke.tolerance * (batting ? .75 + batting.technique * .0035 : 1))
+    const lineError = Math.abs(impact.x * this.battingHandSign - (stroke.line ?? 0)) / (0.96 * (batting ? .72 + batting.shotControl * .004 : 1))
     const batOverlap = Math.hypot(lineError * 0.82, heightError * 0.70)
       + (distanceFromIdeal / window) * (stroke.timingPenalty ?? 0.099)
     if (distanceFromIdeal > 9 * window || impact.y > 1.75 || Math.abs(impact.x) > 0.99 || batOverlap > 1.14) {
@@ -984,7 +1056,7 @@ export class Delivery implements Motion {
     const incomingPace = Math.abs(this.velocity.z)
     const speed = edge
       ? 9.5 + incomingPace * 0.23 + power * 2.5
-      : (stroke.speed + (incomingPace - 24) * 0.16) * (0.82 + power * 0.21 - distanceFromIdeal * 0.023)
+      : (stroke.speed + (incomingPace - 24) * 0.16) * (0.82 + power * 0.21 - distanceFromIdeal * 0.023) * (batting ? (.66 + batting.power * .0046) * consistency : 1)
     const forward = Math.cos(lift) * speed
     Object.assign(this.ball, impact)
     this.velocity.x = Math.sin(horizontal) * forward
@@ -1026,9 +1098,10 @@ export class Delivery implements Motion {
       for (const [index, fielder] of defenders.entries()) {
         const keeper = index === this.fielders.length
         if (keeper && point.z > -0.3) continue
-        const speed = keeper ? KEEPER_SPEED : FIELDER_SPEED
-        const reaction = this.tick === this.fieldTick ? (keeper ? 0.10 : 0.16) : 0
-        const reachable = Math.max(0, tick * DT - reaction) * speed + (forecast.grounded ? 0.72 : 0.56)
+        const stats = this.fielderAttributes(index)
+        const speed = this.fielderSpeed(index)
+        const reaction = this.tick === this.fieldTick ? (keeper ? 0.10 : 0.16) * (stats ? 1.8 - stats.reflexes * .011 : 1) : 0
+        const reachable = Math.max(0, tick * DT - reaction) * speed + (forecast.grounded ? 0.72 : 0.56) * (stats ? .65 + stats.catching * .0046 : 1)
         const gap = distance(fielder, point) - reachable
         if (gap <= 0) return { index, point: { ...point }, tick: this.tick + tick }
         if (gap < leastGap) {
@@ -1054,8 +1127,9 @@ export class Delivery implements Motion {
     if (chase) {
       const keeper = chase.index === this.fielders.length
       const fielder = keeper ? this.keeper : this.fielders[chase.index]
-      const speed = keeper ? KEEPER_SPEED : FIELDER_SPEED
-      if (fielder && this.tick - this.fieldTick > (keeper ? 6 : 10)) {
+      const stats = this.fielderAttributes(chase.index)
+      const speed = this.fielderSpeed(chase.index)
+      if (fielder && this.tick - this.fieldTick > (keeper ? 6 : 10) * (stats ? 1.8 - stats.reflexes * .011 : 1)) {
         moveToward(fielder, chase.point, speed)
         // Sweep the ball segment against the fielder's reach, since a hard
         // shot may travel farther than a glove radius in a single tick.
@@ -1065,7 +1139,7 @@ export class Delivery implements Motion {
         const along = span ? clamp(((fielder.x - previous.x) * dx + (fielder.z - previous.z) * dz) / span, 0, 1) : 0
         const closest = mix(previous, this.ball, along)
         if (along < boundaryAt && !beyondBoundary(fielder, this.boundary, 0.35) &&
-          distance(fielder, closest) <= 0.78 && closest.y <= 2.25) {
+          distance(fielder, closest) <= 0.78 * (stats ? .65 + (groundedBefore ? stats.groundFielding : stats.catching) * .0046 : 1) && closest.y <= 2.25) {
           Object.assign(this.ball, closest)
           if (!groundedBefore && along < bounceAt && !this.noBall && !this.freeHit) {
             this.finish('caught', 0, 'caught')
@@ -1091,7 +1165,8 @@ export class Delivery implements Motion {
 
   private stepPickup() {
     this.advanceRunners()
-    if (this.tick - this.pickTick < PICKUP_TICKS) return
+    const stats = this.fielderAttributes(this.activeFielder)
+    if (this.tick - this.pickTick < PICKUP_TICKS * (stats ? 1.7 - stats.groundFielding * .009 : 1)) return
     if (this.manualFielding && !this.requestedThrow) {
       this.action = 'hold'
       // A held ball remains live while the batters run. Return to the keeper
@@ -1102,7 +1177,7 @@ export class Delivery implements Motion {
     this.returnStart = { ...this.ball, y: 1.18 }
     this.throwTarget = this.requestedThrow ?? (this.backUp > 0.3 && this.fieldRandom() < 0.06 ? 'bowler' : 'striker')
     const target = this.throwTarget === 'bowler' ? { x: 0, y: 0, z: PITCH_LENGTH } : KEEPER
-    this.returnTicks = Math.max(15, Math.ceil(distance(this.returnStart, target) / (24 * DT)))
+    this.returnTicks = Math.max(15, Math.ceil(distance(this.returnStart, target) / (24 * DT * (stats ? .65 + stats.throwingPower * .0046 : 1))))
     this.throwTick = this.tick
     this.action = 'return'
   }
@@ -1116,7 +1191,8 @@ export class Delivery implements Motion {
       this.throwReleased = true
       // An overthrow is an attempt to direct the ball at the stumps that goes
       // wrong. The batting side is awarded one penalty run for it.
-      if (this.fieldRandom() < 0.07) this.overthrow = true
+      const stats = this.fielderAttributes(this.activeFielder)
+      if (this.fieldRandom() < 0.07 * (stats ? 2.2 - stats.throwingAccuracy * .016 : 1)) this.overthrow = true
     }
     const bowlerEnd = this.throwTarget === 'bowler'
     const end = bowlerEnd
@@ -1149,7 +1225,7 @@ export class Delivery implements Motion {
     this.advanceRunners()
     // The keeper must carry the returned ball to the wicket before removing
     // a bail. Reaching the crease on this tick takes precedence over dismissal.
-    moveToward(this.keeper, { x: 0, y: 0, z: -0.4 }, KEEPER_SPEED)
+    moveToward(this.keeper, { x: 0, y: 0, z: -0.4 }, this.fielderSpeed(this.fielders.length))
     if (Math.hypot(this.keeper.x, this.keeper.z + 0.4) < 0.001) this.breakTick ??= this.tick
     const progress = this.breakTick === null ? 0 : Math.min(1, (this.tick - this.breakTick) / 12)
     Object.assign(this.ball, { x: this.keeper.x, y: 0.85 + (WICKET_HEIGHT - 0.85) * progress,
@@ -1245,6 +1321,7 @@ export class Delivery implements Motion {
     const scored = contact === 'miss' ? 0 : batRuns
     this.outcome = {
       batRuns: scored, wide: Number(wide), noBall: Number(this.noBall),
+      ...(this.noBallReason ? { noBallReason: this.noBallReason } : {}),
       byes: extras.byes, legByes: extras.legByes,
       wicket: (this.noBall || this.freeHit || wide) && wicket !== 'run-out' ? null : wicket,
       completedRuns: reason === 'fielded' || reason === 'run-out' ? this.completedRuns : 0,
@@ -1254,6 +1331,7 @@ export class Delivery implements Motion {
       // An overthrow adds one penalty run on top of the runs already scored.
       ...(this.overthrow && reason === 'fielded' ? { overthrowRuns: 1 } : {}),
       ...(this.options.bowler ? { bowler: this.options.bowler } : {}),
+      ...(this.options.bowlerId ? { bowlerId: this.options.bowlerId } : {}),
     }
     this.contact = contact
     this.phase = 'dead'

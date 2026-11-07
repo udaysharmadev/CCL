@@ -7,6 +7,7 @@ import { athlete, batterPose } from '/src/stadium.ts';
 const params=new URLSearchParams(location.search);
 const shot=params.get('shot')||'cover-drive', age=params.has('age')?Number(params.get('age')):undefined;
 const prep=Number(params.get('prep')||0), angle=Number(params.get('angle')||.65), height=Number(params.get('height')||.55);
+const hand=params.get('hand')==='left'?'left':'right',side=hand==='left'?-1:1;
 document.querySelector('#title').textContent=`${age===undefined ? prep?'PICKUP':'GUARD' : shot+' · '+age.toFixed(3)+' s'} — keeper / bowler / square leg`;
 window.poseMetrics=[];
 for(const position of [[-2.8,2.0,-4],[.2,1.4,4],[4,1.6,.2]]){
@@ -15,12 +16,12 @@ for(const position of [[-2.8,2.0,-4],[.2,1.4,4],[4,1.6,.2]]){
  scene.add(new THREE.HemisphereLight(0xffffff,0x647267,2.6));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-3,5,3);scene.add(light);
  const mat=color=>new THREE.MeshLambertMaterial({color});
  const rig=athlete(scene,{shirt:mat(0x198f89),pants:mat(0x214d55),trim:mat(0xf6c963)},'batter',1,new THREE.MeshBasicMaterial({color:0x798e82,transparent:true,opacity:.15}));
- rig.base.position.set(.57,0,.08);
- batterPose(rig,0,age,shot,angle,{x:.1,y:height,z:.46},prep);
+ rig.base.position.set(.57*side,0,.08);
+ batterPose(rig,0,age,shot,angle*side,{x:.1*side,y:height,z:.46},prep,hand);
  const ground=new THREE.Mesh(new THREE.PlaneGeometry(8,8),mat(0xa4b6ae));ground.rotation.x=-Math.PI/2;ground.position.y=-.004;scene.add(ground);
  const crease=new THREE.Mesh(new THREE.BoxGeometry(2.6,.005,.025),mat(0xffffff));crease.position.set(.25,.003,0);scene.add(crease);
- if(age!==undefined){const ball=new THREE.Mesh(new THREE.SphereGeometry(.036,16,12),mat(0xff684c));ball.position.set(.1,height,.46);scene.add(ball);}
- const camera=new THREE.PerspectiveCamera(36,panel.clientWidth/panel.clientHeight,.01,30);camera.position.set(...position);camera.lookAt(.45,.93,.10);
+ if(age!==undefined){const ball=new THREE.Mesh(new THREE.SphereGeometry(.036,16,12),mat(0xff684c));ball.position.set(.1*side,height,.46);scene.add(ball);}
+ const camera=new THREE.PerspectiveCamera(36,panel.clientWidth/panel.clientHeight,.01,30);camera.position.set(position[0]*side,position[1],position[2]);camera.lookAt(.45*side,.93,.10);
  const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(panel.clientWidth,panel.clientHeight);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;panel.append(renderer.domElement);renderer.render(scene,camera);
  rig.base.updateWorldMatrix(true,true);
  window.poseMetrics.push({hands:rig.arms.map(a=>a.hand.getWorldPosition(new THREE.Vector3()).toArray()),feet:rig.legs.map(a=>a.ankle.getWorldPosition(new THREE.Vector3()).toArray()),bat:rig.bat.localToWorld(new THREE.Vector3(0,-.525,0)).toArray()});

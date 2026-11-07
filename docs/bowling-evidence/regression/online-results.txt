@@ -1,0 +1,1 @@
+Online browser smoke passed: two Chromium clients, toss, server-scored swing, reconnect, private invite, innings change and full match result.

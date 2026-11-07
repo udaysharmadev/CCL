@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { ROSTER } from './match-data.ts'
+import { getPlayerProfile } from './player-store.ts'
 
 export function createDressingRoom(container: HTMLElement) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'low-power' })
@@ -12,7 +13,7 @@ export function createDressingRoom(container: HTMLElement) {
   renderer.domElement.setAttribute('aria-label', 'Suncrest dressing room with eleven hanging jerseys and four reserve seats')
   container.append(renderer.domElement)
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color('#062e26')
+  scene.background = new THREE.Color('#0a1c2c')
   const camera = new THREE.OrthographicCamera(-6.5, 6.5, 1.5, -1.5, 0.1, 40)
   camera.position.set(0, 3, 10)
   camera.lookAt(0, 1.65, 0)
@@ -24,8 +25,8 @@ export function createDressingRoom(container: HTMLElement) {
   const trim = new THREE.MeshStandardMaterial({ color: '#cefa69', roughness: 0.7 })
   const wood = new THREE.MeshStandardMaterial({ color: '#a87e4f', roughness: 0.9 })
   const dark = new THREE.MeshStandardMaterial({ color: '#07271e' })
-  const back = new THREE.MeshStandardMaterial({ color: '#123e2d' })
-  const locker = new THREE.MeshStandardMaterial({ color: '#27533b', roughness: 0.9 })
+  const back = new THREE.MeshStandardMaterial({ color: '#142c42' })
+  const locker = new THREE.MeshStandardMaterial({ color: '#253f53', roughness: 0.9 })
   const kitWhite = new THREE.MeshStandardMaterial({ color: '#f4f2dc', roughness: 0.85 })
   const stripLight = new THREE.MeshBasicMaterial({ color: '#edf6bd' })
   const geometry = new THREE.BoxGeometry()
@@ -45,6 +46,7 @@ export function createDressingRoom(container: HTMLElement) {
   scene.add(jerseys)
   const cardTextures: THREE.CanvasTexture[] = []
   const cards: THREE.MeshBasicMaterial[] = []
+  const jerseyLabels: THREE.Mesh[] = []
   function jersey(parent: THREE.Object3D, x: number, y: number, scale: number) {
     const kit = new THREE.Group()
     kit.position.set(x, y, 0)
@@ -94,21 +96,24 @@ export function createDressingRoom(container: HTMLElement) {
     for (const texture of cardTextures) texture.dispose()
     for (const material of cards) material.dispose()
     cardTextures.length = cards.length = 0
+    for (const label of jerseyLabels) { label.geometry.dispose(); label.removeFromParent() }
+    jerseyLabels.length = 0
     for (const child of [...scene.children]) if (child.userData.nameplate) {
       if (child instanceof THREE.Mesh) child.geometry.dispose()
       scene.remove(child)
     }
     names.forEach((name, i) => {
+      const profile = getPlayerProfile(name)
       const canvas = document.createElement('canvas')
       canvas.width = 160
       canvas.height = 40
       const context = canvas.getContext('2d')!
-      context.fillStyle = '#0c3023'
+      context.fillStyle = '#10273a'
       context.fillRect(0, 0, 160, 40)
       context.fillStyle = '#dcecbd'
       context.font = '600 18px sans-serif'
       context.textAlign = 'center'
-      context.fillText(name.toUpperCase(), 80, 27)
+      context.fillText(profile.identity.displayName.toUpperCase(), 80, 27, 150)
       const texture = new THREE.CanvasTexture(canvas)
       texture.colorSpace = THREE.SRGBColorSpace
       cardTextures.push(texture)
@@ -118,10 +123,31 @@ export function createDressingRoom(container: HTMLElement) {
       plate.position.set((i - 5) * .95, 1.35, .05)
       plate.userData.nameplate = true
       scene.add(plate)
+      const kitCanvas = document.createElement('canvas'); kitCanvas.width = kitCanvas.height = 256
+      const kitContext = kitCanvas.getContext('2d')!
+      kitContext.fillStyle = '#f5e7ba'; kitContext.textAlign = 'center'
+      kitContext.font = '800 27px sans-serif'; kitContext.fillText(profile.identity.jerseyName.toUpperCase(), 128, 65, 240)
+      kitContext.font = '800 120px sans-serif'; kitContext.fillText(String(profile.identity.jerseyNumber), 128, 194)
+      const kitTexture = new THREE.CanvasTexture(kitCanvas); kitTexture.colorSpace = THREE.SRGBColorSpace; cardTextures.push(kitTexture)
+      const kitMaterial = new THREE.MeshBasicMaterial({ map: kitTexture, transparent: true, depthWrite: false }); cards.push(kitMaterial)
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(.42, .42), kitMaterial)
+      label.position.set(0, -.06, .091); jerseys.children[i]?.add(label); jerseyLabels.push(label)
+      if (i === 0) {
+        const previewLabel = label.clone(); previewLabel.geometry = label.geometry.clone(); avatar.add(previewLabel); jerseyLabels.push(previewLabel)
+        ;(head.material as THREE.MeshStandardMaterial).color.set(profile.identity.skinTone)
+      }
     })
     avatar.rotation.y = -.3
     renderer.render(scene, camera)
     container.setAttribute('aria-label', `${names.length} selected players and ${ROSTER.length - names.length} reserves`)
   }
-  return { render }
+  function dispose() {
+    const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>()
+    scene.traverse(object => { if (object instanceof THREE.Mesh) { geometries.add(object.geometry); for (const material of Array.isArray(object.material) ? object.material : [object.material]) materials.add(material) } })
+    for (const texture of cardTextures) texture.dispose()
+    for (const geometry of geometries) geometry.dispose()
+    for (const material of materials) material.dispose()
+    renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove()
+  }
+  return { render, dispose }
 }

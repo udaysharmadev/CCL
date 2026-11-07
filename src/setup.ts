@@ -8,6 +8,9 @@ import { VENUE_NAMES, type Venue } from './stadium.ts'
 
 export { ROSTER, isBowler } from './match-data.ts'
 import { ROSTER, DEFAULT_LINEUP, lineupError } from './match-data.ts'
+import { getPlayerProfile, localLineupError } from './player-store.ts'
+import { bowlingLabel, canKeepWicket, canPlayerBowl, playerRatings, ROLE_LABELS } from './player-profile.ts'
+import { createSquadEditor } from './squad-editor.ts'
 
 const LINEUP_KEY = 'ccl.lineup.v1'
 const SETUP_KEY = 'ccl.solo.v1'
@@ -59,8 +62,16 @@ export function getSettings(): SoloSettings {
 
 export function getLineup(): string[] {
   const names = read(LINEUP_KEY)
-  if (Array.isArray(names) && names.every((name: unknown) => typeof name === 'string') && !lineupError(names)) return names
+  // Keep a saved XI visible even if editing a capability makes it temporarily
+  // ineligible. The squad editor and match-start gate explain how to repair it.
+  if (Array.isArray(names) && names.length === 11 && new Set(names).size === 11 && names.every((name: unknown) => typeof name === 'string' && ROSTER.some(p => p.name === name))) return names
   return [...DEFAULT_LINEUP]
+}
+
+/** Online v1 still validates its fixed server roster; local profile edits are not uploaded. */
+export function getOnlineLineup(): string[] {
+  const ids = getLineup()
+  return lineupError(ids) ? [...DEFAULT_LINEUP] : ids
 }
 
 
@@ -104,6 +115,7 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
   preview.className = 'lineup-preview'
   lineup.querySelector('.lineup-lists')!.before(preview)
   let room: ReturnType<typeof createDressingRoom> | undefined
+  const squadEditor = createSquadEditor(lineup, () => renderLineup())
 
   options(selects.overs, Array.from({ length: 19 }, (_, index) => String(index + 2)))
   options(selects.venue, VENUES, VENUE_NAMES)
@@ -155,53 +167,64 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
   }
 
   function renderLineup(focus?: string) {
-    const error = lineupError(draft)
+    const error = localLineupError(draft)
     count.textContent = `PLAYING XI · ${draft.length}/11`
     status.textContent = error || 'Your XI is match ready.'
     status.dataset.ready = String(!error)
-    const selected = ROSTER.filter(({ name }) => draft.includes(name))
-    squadCounts.batters.textContent = String(selected.filter(({ role }) => role === 'Batter').length)
-    squadCounts.bowlers.textContent = String(selected.filter(({ role }) => role === 'Pace' || role === 'Spin').length)
-    squadCounts.keepers.textContent = String(selected.filter(({ role }) => role === 'Keeper').length)
+    const selected = draft.map(getPlayerProfile)
+    squadCounts.batters.textContent = String(selected.filter(p => !p.role.includes('bowler')).length)
+    squadCounts.bowlers.textContent = String(selected.filter(canPlayerBowl).length)
+    squadCounts.keepers.textContent = String(selected.filter(canKeepWicket).length)
     squadCounts.reserves.textContent = `${ROSTER.length - draft.length} players`
     commit.disabled = Boolean(error)
     if (room) room.render(draft)
-    chosen.replaceChildren(...draft.map((name, index) => {
-      const role = ROSTER.find((player) => player.name === name)?.role
+    squadEditor.refresh()
+    chosen.replaceChildren(...squadEditor.sorted(draft).map((name) => {
+      const index = draft.indexOf(name)
+      const profile = getPlayerProfile(name), display = profile.identity.displayName, role = ROLE_LABELS[profile.role]
       const row = document.createElement('li')
-      row.dataset.role = role?.toLowerCase()
+      row.dataset.role = role.toLowerCase()
+      row.dataset.player = name
       const player = document.createElement('span')
       player.className = 'roster-player'
       const number = document.createElement('i')
       number.className = 'roster-number'
       number.textContent = String(index + 1).padStart(2, '0')
-      const playerName = document.createElement('b')
-      playerName.textContent = name
+      const playerName = listButton(display, `Edit ${display}`, () => squadEditor.open(name))
+      playerName.className = 'roster-name-button'
       const playerRole = document.createElement('small')
-      playerRole.textContent = role ?? ''
-      player.append(number, playerName, playerRole)
+      playerRole.textContent = `${profile.identity.captain ? 'C · ' : profile.identity.viceCaptain ? 'VC · ' : ''}#${profile.identity.jerseyNumber} · ${role} · ${profile.batting.hand === 'left' ? 'LHB' : 'RHB'}`
+      const ratings = document.createElement('small'); ratings.className = 'roster-ratings'
+      const rating = playerRatings(profile)
+      ratings.textContent = `BAT ${rating.batting} · BOWL ${rating.bowling} · ${bowlingLabel(profile)}`
+      player.append(number, playerName, playerRole, ratings)
       const move = (step: number, label: string, disabled: boolean) => listButton(label, `Move ${name} ${step < 0 ? 'up' : 'down'}`, () => {
         [draft[index], draft[index + step]] = [draft[index + step], draft[index]]
         renderLineup(`Move ${name} ${step < 0 ? 'up' : 'down'}`)
       }, disabled)
-      row.append(player, move(-1, '↑', index === 0), move(1, '↓', index === draft.length - 1),
+      row.append(player, squadEditor.compareButton(name), move(-1, '↑', index === 0), move(1, '↓', index === draft.length - 1),
         listButton('Bench', `Bench ${name}`, () => {
           draft.splice(index, 1)
           renderLineup(`Select ${name}`)
         }))
       return row
     }))
-    bench.replaceChildren(...ROSTER.filter(({ name }) => !draft.includes(name)).map(({ name, role }) => {
+    bench.replaceChildren(...squadEditor.sorted(ROSTER.filter(({ name }) => !draft.includes(name)).map(p => p.name)).map((name) => {
+      const profile = getPlayerProfile(name), display = profile.identity.displayName, role = ROLE_LABELS[profile.role]
       const row = document.createElement('li')
       row.dataset.role = role.toLowerCase()
+      row.dataset.player = name
       const player = document.createElement('span')
       player.className = 'roster-player reserve-player'
-      const playerName = document.createElement('b')
-      playerName.textContent = name
+      const playerName = listButton(display, `Edit ${display}`, () => squadEditor.open(name))
+      playerName.className = 'roster-name-button'
       const playerRole = document.createElement('small')
-      playerRole.textContent = role
-      player.append(playerName, playerRole)
-      row.append(player, listButton('Select', `Select ${name}`, () => {
+      playerRole.textContent = `#${profile.identity.jerseyNumber} · ${role} · ${profile.batting.hand === 'left' ? 'LHB' : 'RHB'}`
+      const ratings = document.createElement('small'); ratings.className = 'roster-ratings'
+      const rating = playerRatings(profile)
+      ratings.textContent = `BAT ${rating.batting} · BOWL ${rating.bowling}`
+      player.append(playerName, playerRole, ratings)
+      row.append(player, squadEditor.compareButton(name), listButton('Select', `Select ${name}`, () => {
         draft.push(name)
         renderLineup(`Bench ${name}`)
       }, draft.length >= 11))
@@ -216,7 +239,7 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
   document.querySelector('#lineup-cancel')!.addEventListener('click', () => lineup.close())
   document.querySelector('#lineup-dismiss')!.addEventListener('click', () => lineup.close())
   commit.addEventListener('click', () => {
-    if (lineupError(draft)) return
+    if (localLineupError(draft)) return
     if (save(LINEUP_KEY, JSON.stringify(draft))) lineup.close()
     else status.textContent = 'Could not save this lineup.'
   })

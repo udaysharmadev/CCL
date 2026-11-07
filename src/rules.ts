@@ -15,6 +15,7 @@ type Extras = { wide: number; noBall: number; byes: number; legByes: number; pen
 /** Per-batter figures for the scorecard. */
 export type BatterStats = Readonly<{
   name: string
+  playerId?: string
   runs: number
   balls: number
   fours: number
@@ -28,6 +29,7 @@ export type BatterStats = Readonly<{
 /** Per-bowler figures for the scorecard. */
 export type BowlerStats = Readonly<{
   name: string
+  playerId?: string
   balls: number
   runs: number
   wickets: number
@@ -73,6 +75,7 @@ export type DeliveryOutcome = Readonly<Omit<Extras, 'penalty'> & {
   wideReason?: string
   /** The name of the bowler who delivered it. */
   bowler?: string
+  bowlerId?: string
 }>
 
 export type Innings = Readonly<{
@@ -94,6 +97,12 @@ export type Innings = Readonly<{
   fallOfWickets: readonly FallOfWicket[]
   /** Total runs scored from the bat and from extras, kept for the run rate. */
   lastOverRuns: readonly number[]
+  /** Opt-in local selection state; historical and online innings omit it. */
+  selection?: Readonly<{
+    battingOrder: readonly number[]
+    entered: readonly number[]
+    pendingBatter: 'striker' | 'nonStriker' | null
+  }>
 }>
 
 export function newInnings(overs = 2, target?: number, lineup: readonly string[] = []): Innings {
@@ -153,6 +162,7 @@ function blankBatter(name: string): BatterStats {
 
 export function applyDelivery(state: Innings, outcome: DeliveryOutcome): Innings {
   if (state.complete) return state
+  if (state.selection?.pendingBatter) throw new Error('Select the incoming batter before the next delivery.')
 
   const { noBall, byes, legByes, completedRuns } = outcome
   const wide = noBall ? 0 : outcome.wide
@@ -172,19 +182,21 @@ export function applyDelivery(state: Innings, outcome: DeliveryOutcome): Innings
 
   let striker = state.striker
   let nonStriker = state.nonStriker
+  let pendingBatter: 'striker' | 'nonStriker' | null = null
   if ((!wicket || wicket === 'run-out') && completedRuns % 2) {
     [striker, nonStriker] = [nonStriker, striker]
   }
   if (wicket === 'run-out' && outcome.crossed) [striker, nonStriker] = [nonStriker, striker]
   const dismissed = outcome.dismissedBatter ?? 'striker'
-  if (wicket && wickets < WICKETS_PER_INNINGS) {
+  if (wicket && wickets < WICKETS_PER_INNINGS && (!state.selection || !complete)) {
     const gone = state[dismissed]
-    const incoming = wickets + 2
-    if (striker === gone) striker = incoming
-    else nonStriker = incoming
+    const incoming = state.selection && !complete ? 0 : wickets + 2
+    if (striker === gone) { striker = incoming; if (incoming === 0) pendingBatter = 'striker' }
+    else { nonStriker = incoming; if (incoming === 0) pendingBatter = 'nonStriker' }
   }
   if (legal && legalBalls % BALLS_PER_OVER === 0) {
     [striker, nonStriker] = [nonStriker, striker]
+    if (pendingBatter) pendingBatter = pendingBatter === 'striker' ? 'nonStriker' : 'striker'
   }
 
   // ---- Scorecard bookkeeping -------------------------------------------------
@@ -199,9 +211,10 @@ export function applyDelivery(state: Innings, outcome: DeliveryOutcome): Innings
   const bowlerName = outcome.bowler ?? ''
 
   if (bowlerName) {
-    const existing = bowling.findIndex((bowler) => bowler.name === bowlerName)
+    const existing = bowling.findIndex((bowler) => outcome.bowlerId ? bowler.playerId === outcome.bowlerId : bowler.name === bowlerName)
     const figure: BowlerStats = existing >= 0 ? bowling[existing] : {
       name: bowlerName, balls: 0, runs: 0, wickets: 0, maidens: 0, wides: 0, noBalls: 0,
+      ...(outcome.bowlerId ? { playerId: outcome.bowlerId } : {}),
     }
     const next: BowlerStats = {
       ...figure,
@@ -285,6 +298,7 @@ export function applyDelivery(state: Innings, outcome: DeliveryOutcome): Innings
       penalty: state.extras.penalty + penaltyRuns + overthrowRuns,
     },
     batting, bowling, partnerships, fallOfWickets, lastOverRuns,
+    ...(state.selection ? { selection: { ...state.selection, pendingBatter } } : {}),
   }
 }
 

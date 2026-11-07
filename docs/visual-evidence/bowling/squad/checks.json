@@ -1,0 +1,12 @@
+{
+  "browser": "156.0.8078.4",
+  "checks": [
+    "Full XI, reserves, two-player comparison and desktop layout verified.",
+    "Full name, display name, jersey identity and left-handed batting persist after a real reload.",
+    "Pace/spin attribute panels adapt; invalid pace is rejected without closing or saving.",
+    "Spin/left-handed filters and bowling sorting operate on saved attributes.",
+    "Squad and profile editor fit 390×844, 320×740 and 844×390 with no horizontal overflow.",
+    "Repeated editor transitions retain one preview renderer and one editor; no console errors."
+  ],
+  "errors": []
+}

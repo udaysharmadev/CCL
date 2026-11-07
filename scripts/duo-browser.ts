@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -13,6 +13,8 @@ import { startOnlineServer } from './online-server.ts'
 let now = 1000
 const host = await startOnlineServer({ clock: () => now, toss: () => 0, nextSeed: () => 41 })
 const outDir = await mkdtemp(join(tmpdir(), 'ccl-online-browser-'))
+const qaDir = process.env.CCL_QA_DIR ?? tmpdir()
+await mkdir(qaDir, { recursive: true })
 let server: Awaited<ReturnType<typeof preview>> | undefined
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
 
@@ -27,7 +29,7 @@ async function snapshot(messages: OnlineServerMessage[], check: (state: OnlineSn
 }
 
 try {
-  const bundle = { build: { outDir, emptyOutDir: true }, logLevel: 'error' } as const
+  const bundle = { configLoader: 'native', build: { outDir, emptyOutDir: true }, logLevel: 'error' } as const
   await build({
     ...bundle,
     define: { 'import.meta.env.VITE_CCL_ONLINE_URL': JSON.stringify(host.url) },
@@ -67,7 +69,7 @@ try {
 
   const first = await client()
   await first.page.getByRole('button', { name: 'Online', exact: true }).click()
-  await first.page.getByLabel('Private overs').fill('2')
+  await first.page.locator('#private-overs').fill('2')
   await first.page.getByRole('button', { name: 'Duo Batting · bat together vs AI', exact: true }).click()
   await first.page.getByRole('heading', { name: 'Duo room', exact: true }).waitFor()
   const invite = await first.page.getByLabel('Invite link').inputValue()
@@ -100,7 +102,7 @@ try {
   state = await snapshot(first.messages, (state) => state.duoSwap?.version === initialVersion + 2)
   assert.equal(state.battingSeat, 0)
   assert.deepEqual(state.score, initialScore)
-  await first.page.screenshot({ path: '/tmp/ccl-duo-swap.png' })
+  await first.page.screenshot({ path: join(qaDir, 'ccl-duo-swap.png') })
 
   for (let delivery = 1; delivery <= 12; delivery++) {
     const seat: 0 | 1 = state.battingSeat === 1 ? 1 : 0
@@ -143,8 +145,8 @@ try {
         now += 100
         await striker.page.getByRole('button', { name: 'Turn back', exact: true }).click()
         await snapshot(striker.messages, (state) => state.active?.runs?.length === 3)
-        await striker.page.screenshot({ path: '/tmp/ccl-duo-batting.png' })
-        await partner.page.screenshot({ path: '/tmp/ccl-duo-partner.png' })
+        await striker.page.screenshot({ path: join(qaDir, 'ccl-duo-batting.png') })
+        await partner.page.screenshot({ path: join(qaDir, 'ccl-duo-partner.png') })
       }
       if (delivery === 3) {
         assert.ok(accepted.active)
@@ -175,7 +177,7 @@ try {
       assert.equal(state.last?.outcome.dismissedBatter, 'nonStriker')
       assert.equal(state.score.striker, 3)
       assert.equal(state.battingSeat, 0)
-      await striker.page.screenshot({ path: '/tmp/ccl-duo-run-out.png' })
+      await striker.page.screenshot({ path: join(qaDir, 'ccl-duo-run-out.png') })
     }
     if (delivery === 4) {
       first.messages.length = 0
@@ -195,7 +197,7 @@ try {
     await entry.page.getByRole('heading', { name: 'Partnership complete', exact: true }).waitFor()
     assert.equal(await entry.page.locator('#coins').textContent(), '15')
   }
-  await first.page.screenshot({ path: '/tmp/ccl-duo-result.png' })
+  await first.page.screenshot({ path: join(qaDir, 'ccl-duo-result.png') })
   for (const entry of clients) await entry.page.getByRole('button', { name: 'Rematch', exact: true }).click()
   const rematch = await snapshot(first.messages, (state) => state.match === 2)
   assert.equal(rematch.room, state.room)

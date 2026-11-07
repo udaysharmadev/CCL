@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import { chromium, type Page } from 'playwright-core'
 import { preview } from 'vite'
 
-const server = await preview({ preview: { host: '127.0.0.1', port: 0, strictPort: true } })
+const server = await preview({ configLoader: 'native', preview: { host: '127.0.0.1', port: 0, strictPort: true } })
 const address = server.httpServer.address()
 if (!address || typeof address === 'string') throw new Error('Preview server did not bind')
 const args = ['--ignore-gpu-blocklist', '--enable-webgl']

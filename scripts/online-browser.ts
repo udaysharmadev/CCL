@@ -26,7 +26,7 @@ async function snapshot(messages: OnlineServerMessage[], check: (state: OnlineSn
 }
 
 try {
-  const bundle = { build: { outDir, emptyOutDir: true }, logLevel: 'error' } as const
+  const bundle = { configLoader: 'native', build: { outDir, emptyOutDir: true }, logLevel: 'error' } as const
   await build({
     ...bundle,
     define: { 'import.meta.env.VITE_CCL_ONLINE_URL': JSON.stringify(host.url) },
@@ -108,7 +108,7 @@ try {
 
   const privateHost = await client()
   await privateHost.page.getByRole('button', { name: 'Online', exact: true }).click()
-  await privateHost.page.getByLabel('Private overs').fill('2')
+  await privateHost.page.locator('#private-overs').fill('2')
   await privateHost.page.getByRole('button', { name: 'Create private room' }).click()
   const privateRoom = await snapshot(privateHost.messages, (state) => state.phase === 'lobby')
   const invite = await privateHost.page.getByLabel('Invite link').inputValue()

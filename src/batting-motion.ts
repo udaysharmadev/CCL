@@ -30,17 +30,19 @@ export function elbowPosition(shoulder: Vector3, wrist: Vector3, pole: Vector3, 
 }
 
 /** Relative to the crease, in pitch axes: low guard, then a compact pickup behind the back foot. */
-export function guardPose(time: number, preparation = 0) {
+export function guardPose(time: number, preparation = 0, hand: 'right' | 'left' = 'right') {
   const lift = smooth(preparation)
+  const side = hand === 'left' ? -1 : 1
   const waggle = Math.sin(time * 3.2) * .008 * (1 - lift)
   return {
-    centre: new Vector3(-.30, .36 + waggle, .08).lerp(new Vector3(-.30, .69, -.24), lift),
-    shaft: new Vector3(.04, 1, -.04).lerp(new Vector3(-.12, .70, .70), lift).normalize(),
+    centre: new Vector3(-.30 * side, .36 + waggle, .08).lerp(new Vector3(-.30 * side, .69, -.24), lift),
+    shaft: new Vector3(.04 * side, 1, -.04).lerp(new Vector3(-.12 * side, .70, .70), lift).normalize(),
   }
 }
 
 /** Contact-relative stroke. The renderer blends from its prepared guard and back to guard. */
-export function bladePose(shot: Shot, age: number, impact: Vec3, angle: number) {
+export function bladePose(shot: Shot, age: number, impact: Vec3, angle: number, hand: 'right' | 'left' = 'right') {
+  const side = hand === 'left' ? -1 : 1
   const family = shotFamily(shot)
   const direction = new Vector3(Math.sin(angle), 0, Math.cos(angle))
   const contact = new Vector3(impact.x, impact.y, impact.z)
@@ -52,12 +54,12 @@ export function bladePose(shot: Shot, age: number, impact: Vec3, angle: number) 
   const follow = smooth((age - contactTime) / .34)
   const centre = contact.clone().lerp(finish, follow)
   // A horizontal blade for square strokes, a vertical face for drives/defense.
-  const shaft = cross ? new Vector3(.85, .32, -.08)
-    : family === 'scoop' ? new Vector3(.15, .65, -.65) : new Vector3(.18, 1, -.18)
-  if (!defensive) shaft.lerp(family === 'sweep' ? new Vector3(.9, .12, -.25)
-    : family === 'cross' ? new Vector3(.40 - direction.x * .22, .25, -.65)
-    : new Vector3(.18, -.85, -.40), follow)
-  if (family === 'helicopter') shaft.applyAxisAngle(new Vector3(0, 1, 0), smooth((age - .15) / .55) * Math.PI * 1.3)
+  const shaft = cross ? new Vector3(.85 * side, .32, -.08)
+    : family === 'scoop' ? new Vector3(.15 * side, .65, -.65) : new Vector3(.18 * side, 1, -.18)
+  if (!defensive) shaft.lerp(family === 'sweep' ? new Vector3(.9 * side, .12, -.25)
+    : family === 'cross' ? new Vector3(.40 * side - direction.x * .22, .25, -.65)
+    : new Vector3(.18 * side, -.85, -.40), follow)
+  if (family === 'helicopter') shaft.applyAxisAngle(new Vector3(0, 1, 0), smooth((age - .15) / .55) * Math.PI * 1.3 * side)
   return { centre, shaft: shaft.normalize(), family, weight: 1 - smooth((age - .62) / .48) }
 }
 
