@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220" viewBox="0 0 400 220" fill="none">
+  <defs>
+    <linearGradient id="blue" x1="163" y1="59" x2="242" y2="144" gradientUnits="userSpaceOnUse"><stop stop-color="#69AFE9"/><stop offset=".45" stop-color="#3378B8"/><stop offset="1" stop-color="#153D73"/></linearGradient>
+    <linearGradient id="green" x1="163" y1="59" x2="242" y2="144" gradientUnits="userSpaceOnUse"><stop stop-color="#70D5B3"/><stop offset=".45" stop-color="#219480"/><stop offset="1" stop-color="#10565B"/></linearGradient>
+    <radialGradient id="blue-halo"><stop stop-color="#56B2E4" stop-opacity=".27"/><stop offset="1" stop-color="#56B2E4" stop-opacity="0"/></radialGradient>
+    <radialGradient id="green-halo"><stop stop-color="#4ACDB3" stop-opacity=".25"/><stop offset="1" stop-color="#4ACDB3" stop-opacity="0"/></radialGradient>
+    <linearGradient id="metal" x1="233" y1="117" x2="256" y2="177" gradientUnits="userSpaceOnUse"><stop stop-color="#C6ECF0"/><stop offset="1" stop-color="#6DA1B2"/></linearGradient>
+  </defs>
+  <ellipse cx="207" cy="108" rx="106" ry="101" fill="url(#blue-halo)"/>
+  <ellipse cx="345" cy="110" rx="91" ry="100" fill="url(#green-halo)"/>
+  <path d="m149 45 82-20m-91 38 86-20m92 137 77 20m-64-6 52 14" stroke="#79C0D6" stroke-opacity=".2"/>
+  <path d="m282 16-28 53 19 6-35 57 48-32-9-19 30-65Z" fill="#77D7CF" fill-opacity=".16"/>
+  <path d="m273 37-12 30 20 6-38 62 48-35-14-19 22-43" stroke="#B1EFDA" stroke-opacity=".28"/>
+  <ellipse cx="213" cy="178" rx="59" ry="14" fill="#092E49" fill-opacity=".5"/>
+  <ellipse cx="347" cy="178" rx="54" ry="14" fill="#092E49" fill-opacity=".5"/>
+  <path d="M153 117c-3-42 18-70 51-70 31 0 52 24 53 57l-27 17-29-8-7 39-35-10Z" fill="url(#blue)" stroke="#245E7F" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M164 91c5-18 16-29 31-33m-34 46v14" stroke="#8AC5E9" stroke-width="4" stroke-linecap="round"/>
+  <path d="M161 143h34l7-30-11-6-26 12Z" fill="#1B4570"/>
+  <path d="m199 93 5-31m5 33 6-33" stroke="#245C88" stroke-width="2"/>
+  <path d="m225 98 39 3c6 1 8 5 2 8l-39 10-22-8Z" fill="#285C8C" stroke="#164572" stroke-width="2"/>
+  <path d="m209 72 13 2 2 14-11 8-8-12Z" fill="#E9DC93"/>
+  <path d="m166 116 20 3-5 25-18-6Z" fill="#194875"/>
+  <circle cx="174" cy="129" r="4" fill="#8EAFC2"/>
+  <g stroke="url(#metal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m250 114 7 37-33 27-39-26-8-16"/>
+    <path d="m251 126-41 10-30-5m75 12-42 13-29-17m59-22 3 43m-18-39 4 49"/>
+  </g>
+  <path d="m187 149 17 18" stroke="#194571" stroke-width="5" stroke-linecap="round"/>
+  <g transform="translate(551 0) scale(-1 1)">
+    <path d="M153 117c-3-42 18-70 51-70 31 0 52 24 53 57l-27 17-29-8-7 39-35-10Z" fill="url(#green)" stroke="#2C8790" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M164 91c5-18 16-29 31-33m-34 46v14" stroke="#8CE0BA" stroke-width="4" stroke-linecap="round"/>
+    <path d="M161 143h34l7-30-11-6-26 12Z" fill="#166461"/>
+    <path d="m199 93 5-31m5 33 6-33" stroke="#18716C" stroke-width="2"/>
+    <path d="m225 98 39 3c6 1 8 5 2 8l-39 10-22-8Z" fill="#237C70" stroke="#135A62" stroke-width="2"/>
+    <path d="m209 72 13 2 2 14-11 8-8-12Z" fill="#D4F19A"/>
+    <path d="m166 116 20 3-5 25-18-6Z" fill="#145B62"/>
+    <circle cx="174" cy="129" r="4" fill="#A3C3B6"/>
+    <g stroke="url(#metal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m250 114 7 37-33 27-39-26-8-16"/>
+      <path d="m251 126-41 10-30-5m75 12-42 13-29-17m59-22 3 43m-18-39 4 49"/>
+    </g>
+    <path d="m187 149 17 18" stroke="#145B62" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <path d="m253 173 27-12 28 12-10 26h-35Z" fill="#163D50" stroke="#91D6CF" stroke-opacity=".6"/>
+  <text x="280" y="188" text-anchor="middle" fill="#E0F4D9" font-family="Arial, sans-serif" font-size="20" font-weight="900" font-style="italic">VS</text>
+  <path d="m144 166 4-4 4 4-4 4Zm202-129 4-4 4 4-4 4Z" fill="#9BE8D1" fill-opacity=".7"/>
+  <path d="M225 199h19m-10-9v18m93-21h13" stroke="#8CD2CC" stroke-opacity=".5" stroke-width="1.5"/>
+</svg>

@@ -1,0 +1,302 @@
+{
+  "browser": "156.0.8078.81",
+  "softwareGpu": true,
+  "issues": [],
+  "warnings": [],
+  "captures": {
+    "01-home-desktop": {
+      "marks": {
+        "firstFrame": 3337
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 205087,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 191,
+        "triangles": 96092,
+        "boundary": null
+      }
+    },
+    "02-setup-desktop": {
+      "marks": {
+        "firstFrame": 3337
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 205087,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 193,
+        "triangles": 96094,
+        "boundary": null
+      }
+    },
+    "03-match-desktop": {
+      "marks": {
+        "firstFrame": 3337,
+        "firstPlay": 12884,
+        "firstRelease": 20550
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 205387,
+      "frameMs": {
+        "count": 53,
+        "p50": 249.9,
+        "p95": 472.2,
+        "p99": 1166.7
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 217,
+        "triangles": 96932,
+        "boundary": null
+      }
+    },
+    "04-match-landscape": {
+      "marks": {
+        "firstFrame": 3337,
+        "firstPlay": 12884,
+        "firstRelease": 20550
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 205387,
+      "frameMs": {
+        "count": 63,
+        "p50": 243.1,
+        "p95": 472.2,
+        "p99": 1166.7
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 238,
+        "triangles": 97716,
+        "boundary": null
+      }
+    },
+    "layout-landscape": {
+      "score": {
+        "x": 0,
+        "y": 326,
+        "right": 800,
+        "bottom": 450
+      },
+      "loft": {
+        "x": 643,
+        "y": 274,
+        "right": 707,
+        "bottom": 328
+      },
+      "next": {
+        "x": 347.28125,
+        "y": 290,
+        "right": 452.71875,
+        "bottom": 328
+      },
+      "width": 800,
+      "height": 450
+    },
+    "04-match-portrait": {
+      "marks": {
+        "firstFrame": 3337,
+        "firstPlay": 12884,
+        "firstRelease": 20550
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 205387,
+      "frameMs": {
+        "count": 75,
+        "p50": 236.1,
+        "p95": 736,
+        "p99": 1166.7
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 193,
+        "triangles": 96122,
+        "boundary": null
+      }
+    },
+    "layout-portrait": {
+      "score": {
+        "x": 0,
+        "y": 693,
+        "right": 390,
+        "bottom": 844
+      },
+      "loft": {
+        "x": 243,
+        "y": 621,
+        "right": 306,
+        "bottom": 678
+      },
+      "next": {
+        "x": 12,
+        "y": 640,
+        "right": 117.4375,
+        "bottom": 678
+      },
+      "width": 390,
+      "height": 844
+    },
+    "quality-high": {
+      "marks": {
+        "firstFrame": 3337,
+        "firstPlay": 12884,
+        "firstRelease": 20550
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 205387,
+      "frameMs": {
+        "count": 78,
+        "p50": 236,
+        "p95": 736,
+        "p99": 1166.7
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 218,
+        "triangles": 96938,
+        "boundary": null
+      }
+    },
+    "quality-medium": {
+      "marks": {
+        "firstFrame": 3337,
+        "firstPlay": 12884,
+        "firstRelease": 20550
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 205387,
+      "frameMs": {
+        "count": 78,
+        "p50": 236,
+        "p95": 736,
+        "p99": 1166.7
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 218,
+        "triangles": 96938,
+        "boundary": null
+      }
+    },
+    "quality-low": {
+      "marks": {
+        "firstFrame": 3337,
+        "firstPlay": 12884,
+        "firstRelease": 20550
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 205387,
+      "frameMs": {
+        "count": 78,
+        "p50": 236,
+        "p95": 736,
+        "p99": 1166.7
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 218,
+        "triangles": 96938,
+        "boundary": null
+      }
+    },
+    "performance": {
+      "marks": {
+        "firstFrame": 3337,
+        "firstPlay": 12884,
+        "firstRelease": 20550
+      },
+      "counts": {
+        "firstFrame": 1,
+        "firstPlay": 1,
+        "firstRelease": 1
+      },
+      "transferBytes": 205387,
+      "frameMs": {
+        "count": 95,
+        "p50": 229.2,
+        "p95": 472.2,
+        "p99": 1166.7
+      },
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 195,
+        "triangles": 96302,
+        "boundary": null
+      }
+    },
+    "05-home-portrait": {
+      "marks": {
+        "firstFrame": 1936
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 1500,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 158,
+        "triangles": 94792,
+        "boundary": null
+      }
+    },
+    "06-setup-portrait": {
+      "marks": {
+        "firstFrame": 1936
+      },
+      "counts": {
+        "firstFrame": 1
+      },
+      "transferBytes": 1500,
+      "frameMs": null,
+      "inputToFrameMs": null,
+      "swingToContactMs": null,
+      "graphics": {
+        "calls": 153,
+        "triangles": 94638,
+        "boundary": null
+      }
+    }
+  }
+}

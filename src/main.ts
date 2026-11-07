@@ -1,4 +1,7 @@
 import './style.css'
+import './clubhouse.css'
+import './lobby.css'
+import './menu-theme.css'
 import { renderMatchScorecard, overSummary } from './scorecard.ts'
 import { createFieldMap } from './field-map.ts'
 import { swipeShot, type BattingMode } from './swipe.ts'
@@ -16,6 +19,7 @@ import { DEFAULT_SETTINGS, getLineup, getSettings, isBowler, setupMenus, type So
 import { connectOnline, rememberedRoom, roomCode, type OnlineConnectionStatus } from './online-client.ts'
 import { ONLINE_WINDUP_MS, type OnlineHandshake, type OnlineSeat, type OnlineSnapshot } from './online-contract.ts'
 import { DeliveryReplay } from './delivery-replay.ts'
+import { broadcastEvent, inningsMilestone } from './broadcast.ts'
 
 import { newSixChallenge, scoreSix, SIX_ATTEMPTS, type SixChallenge } from './six-challenge.ts'
 import { applyReview, DISMISSAL_LABELS } from './laws.ts'
@@ -40,6 +44,7 @@ const ui = {
   oversLimit: element('overs-limit'), chase: element('chase'), freeHit: element('free-hit'), stats: element('score-stats'),
   ribbon: element('ribbon'), matchId: element('match-id'), playfield: element('playfield'), targetLabel: element('target-label'),
   countdown: element('countdown'), callout: element('callout'), callTitle: element('call-title'), callDetail: element('call-detail'),
+  callKicker: element('call-kicker'), milestone: element('match-milestone'),
   dock: element('control-dock'), batControls: element('bat-controls'), bowlControls: element('bowl-controls'),
   deliveries: element('deliveries'), timing: element('timing'), needle: element('timing-needle'),
   deliveryBank: element<HTMLSelectElement>('delivery-bank'), field: element<HTMLSelectElement>('field-select'), fieldLabel: element('field-label'),
@@ -339,6 +344,7 @@ function isBowling() {
 function setPhase(next: Phase) {
   phase = next
   elapsed = 0
+  if (next !== 'dead') ui.milestone.hidden = true
   refreshPending = true
 }
 
@@ -421,7 +427,14 @@ function home() {
   ui.overlay.close()
   setPhase('ready')
   showWallet()
+  showHomeMatch()
   ui.solo.focus()
+}
+
+function showHomeMatch() {
+  const saved = getSettings()
+  element('home-match-details').textContent = `${saved.overs} OVERS · ${VENUE_NAMES[saved.venue].toUpperCase()}`
+  element('home-venue-name').textContent = VENUE_NAMES[saved.venue].toUpperCase()
 }
 
 function beginBall() {
@@ -800,6 +813,7 @@ function presentOnlineOutcome(last: NonNullable<OnlineSnapshot['last']>) {
   if (signal === 'out') sound('wicket')
   if (signal === 'four' || signal === 'six') sound('boundary')
   const call = describe(last.outcome)
+  presentBroadcast(last.outcome)
   ui.callTitle.textContent = call.title
   ui.callDetail.textContent = call.detail
   setPhase('dead')
@@ -972,6 +986,9 @@ function runThirdUmpire(outcome: DeliveryOutcome, drs: DrsState, reviewRecord: R
 
 function applyOutcome(outcome: DeliveryOutcome) {
   if (!match || !record) return
+  // Replay shows the committed decision, including any third-umpire correction.
+  // The reconstructed delivery is only the source of the on-field motion.
+  if (replaying) outcome = currentInnings()?.history.at(-1) ?? outcome
   if (!replaying) {
     const state = currentInnings()
     if (!state) return
@@ -980,6 +997,9 @@ function applyOutcome(outcome: DeliveryOutcome) {
     else match.first = updated
     const canonical = updated.history.at(-1)
     if (canonical) outcome = canonical
+    const milestone = view === 'six' ? undefined : inningsMilestone(state, updated)
+    ui.milestone.textContent = milestone ?? ''
+    ui.milestone.hidden = !milestone
     record.signal = outcomeSignal(outcome)
     lastReplay = record
     if (view === 'six' && live) {
@@ -995,11 +1015,18 @@ function applyOutcome(outcome: DeliveryOutcome) {
   setPhase('dead')
   if (!replaying && !isBowling()) showTiming(false)
   const call = describe(outcome)
+  presentBroadcast(outcome)
   const attempt = view === 'six' ? six.attempts.at(-1) : undefined
   ui.callTitle.textContent = attempt ? attempt.validSix ? `${attempt.distance.toFixed(1)} m` : 'No valid six' : call.title
   ui.callDetail.textContent = attempt
     ? attempt.validSix ? `First landing · +${attempt.points} points` : `${call.title} · Aim straight and loft in yellow`
     : call.detail
+}
+
+function presentBroadcast(outcome: DeliveryOutcome) {
+  const event = broadcastEvent(outcome)
+  ui.callout.dataset.event = event.kind
+  ui.callKicker.textContent = replaying ? 'REPLAY' : event.kicker
 }
 
 function describe(outcome: DeliveryOutcome) {
@@ -1063,6 +1090,8 @@ function afterBall() {
   if (phase !== 'dead') return
   if (replaying) {
     replaying = false
+    const committed = currentInnings()?.history.at(-1)
+    if (committed) presentBroadcast(committed)
     refreshPending = true
     return
   }
@@ -1205,6 +1234,8 @@ function openOverlay(kicker: string, title: string, text: string, buttons: Overl
   pointer = undefined
   ui.swipeTrail.classList.remove('drawing')
   ui.overlayKicker.textContent = kicker
+  ui.overlay.dataset.presentation = kicker.includes('RESULT') || kicker.includes('POWER HIT') || title === 'Drill complete'
+    ? 'result' : kicker.includes('INNINGS') ? 'innings' : title === 'Paused' ? 'pause' : 'default'
   ui.overlayTitle.textContent = title
   ui.overlayText.textContent = text
   ui.overlayScores.hidden = true
@@ -1413,11 +1444,22 @@ function refresh() {
   if (innings) renderScore(innings)
 }
 
+const renderFrame: StadiumFrame = { mode: 'home', phase: 'ready' }
+const renderAim = { x: 0, z: 0 }
+const renderPractice: NonNullable<StadiumFrame['practiceSwing']> = { age: 0, shot: 'drive' }
+
 function frame(now: number) {
+  const simulationStart = performance.now()
   const delta = previousFrame > 0 ? (now - previousFrame) / 1000 : 0
   previousFrame = now
+  // The clubhouse uses a static illustration; do not run the stadium demo behind it.
+  if (view === 'home') {
+    if (refreshPending) refresh()
+    requestAnimationFrame(frame)
+    return
+  }
   const dt = Math.min(delta, DRAWN_FRAME_LIMIT)
-  if (view !== 'home' && !paused) {
+  if (!paused) {
     if (delta > 0) sample('frameMs', delta * 1000)
     elapsed += dt
     if (view === 'online') {
@@ -1454,8 +1496,10 @@ function frame(now: number) {
       }
     }
   }
+  const presentationStart = performance.now()
+  if (!paused) sample('simulationMs', presentationStart - simulationStart)
   if (match?.drs.pendingOutcome && now > match.drs.reviewDeadline) expireReview()
-  if (view !== 'home' && view !== 'online' && !paused && !replaying && !isBowling() && phase === 'dead' && !match?.drs.pendingOutcome && !currentInnings()?.complete && autoNext) {
+  if (view !== 'online' && !paused && !replaying && !isBowling() && phase === 'dead' && !match?.drs.pendingOutcome && !currentInnings()?.complete && autoNext) {
     if (elapsed >= 4.5 && !stadium?.boundaryPlaying()) beginBall()
     else ui.next.textContent = stadium?.boundaryPlaying() ? 'Watching the boundary…' : `Next ball · ${Math.max(1, Math.ceil(4.5 - elapsed))}`
   }
@@ -1471,31 +1515,44 @@ function frame(now: number) {
     ui.duoControls.dataset.threat = String(threat && live.runnersMoving)
     ui.duoControls.style.setProperty('--striker-run', `${live.runnerProgress * 100}%`)
     ui.duoControls.style.setProperty('--partner-run', `${live.partnerProgress * 100}%`)
-    const status = live.runnersReturning ? 'TURN BACK • get home' : live.pendingRuns
+    const grounded = Number(live.runnerProgress <= 1e-9) + Number(live.partnerProgress <= 1e-9)
+    const status = live.runnersReturning ? grounded === 1 ? 'ONE HOME • partner returning' : 'TURN BACK • get home' : live.pendingRuns
       ? `${threat ? 'THROW COMING' : 'RUNNING'} · ${live.pendingRuns} called` : 'TAP RUN • steal a single'
     if (ui.duoRole.textContent !== status) ui.duoRole.textContent = status
   }
-  const mode = view === 'home' ? 'home' : isBowling() ? 'bowl' : 'bat'
+  const mode = isBowling() ? 'bowl' : 'bat'
   renderFieldMaps()
   renderManualFielding()
   const angle = SHOT_ANGLES[activeShot] + aim
   const bowlingKind = phase === 'ready' || phase === 'dead' ? activeDelivery
     : (view === 'online' ? onlineState?.bowlingKind : record?.options.kind) ?? activeDelivery
   if (!paused) {
-    stadium?.render({
-      reducedMotion: settings.reducedMotion,
-      cooperative: view === 'online' && onlineState?.mode === 'duo',
-      mode, phase, delivery: live, windup: Math.min(1, elapsed / (replaying ? 0.65 : WINDUP_SECONDS)),
-      aim: mode === 'bowl' && view === 'online' && onlineState?.mode === 'duo' ? undefined : mode === 'bowl' ? { x: Number(ui.line.value), z: bounceLength(bowlingKind) } : undefined,
-      bowlingKind,
-      maxOutside: view === 'online' ? onlineState?.maxOutside
-        : view === 'solo' && currentInnings() ? outsideLimit(currentInnings()!.overs, currentInnings()!.legalBalls) : undefined,
-      fieldPreset: mode === 'bowl' ? (phase === 'ready' || phase === 'dead' ? activeField : record?.options.field ?? activeField) : 'balanced',
-      fieldLayout: mode === 'bowl' ? fieldLayout : undefined,
-      shotAngle: record?.shot?.input.aim ?? angle,
-      shot: record?.shot?.input.kind ?? activeShot, signal, replay: replaying,
-      practiceSwing: gestureSwing && now - gestureSwing.at < 1100 ? { age: (now - gestureSwing.at) / 1000, shot: gestureSwing.shot } : undefined,
-    }, dt)
+    renderFrame.reducedMotion = settings.reducedMotion
+    renderFrame.cooperative = view === 'online' && onlineState?.mode === 'duo'
+    renderFrame.mode = mode
+    renderFrame.phase = phase
+    renderFrame.delivery = live
+    renderFrame.windup = Math.min(1, elapsed / (replaying ? .65 : WINDUP_SECONDS))
+    renderAim.x = Number(ui.line.value)
+    renderAim.z = bounceLength(bowlingKind)
+    renderFrame.aim = mode === 'bowl' && !(view === 'online' && onlineState?.mode === 'duo') ? renderAim : undefined
+    renderFrame.bowlingKind = bowlingKind
+    const innings = currentInnings()
+    renderFrame.maxOutside = view === 'online' ? onlineState?.maxOutside
+      : view === 'solo' && innings ? outsideLimit(innings.overs, innings.legalBalls) : undefined
+    renderFrame.fieldPreset = mode === 'bowl' ? (phase === 'ready' || phase === 'dead' ? activeField : record?.options.field ?? activeField) : 'balanced'
+    renderFrame.fieldLayout = mode === 'bowl' ? fieldLayout : undefined
+    renderFrame.shotAngle = record?.shot?.input.aim ?? angle
+    renderFrame.shot = record?.shot?.input.kind ?? activeShot
+    renderFrame.signal = signal
+    renderFrame.replay = replaying
+    renderPractice.age = gestureSwing ? (now - gestureSwing.at) / 1000 : 2
+    renderPractice.shot = gestureSwing?.shot ?? activeShot
+    renderFrame.practiceSwing = renderPractice.age < 1.1 ? renderPractice : undefined
+    const renderStart = performance.now()
+    sample('presentationMs', renderStart - presentationStart)
+    stadium?.render(renderFrame, dt)
+    sample('renderMs', performance.now() - renderStart)
   }
   if (inputTimestamp !== undefined) {
     sample('inputToFrameMs', performance.now() - inputTimestamp)
@@ -1922,6 +1979,7 @@ async function boot() {
   career = loadCareer()
   careerRecord = loadCareerRecord()
   showCareerSummary()
+  showHomeMatch()
   muted = stored(SOUND_KEY) === 'off'
   settings = loadSettings()
   applySettings()
@@ -1932,6 +1990,7 @@ async function boot() {
     stadium.render({ mode: 'home', phase: 'ready' }, 0)
     mark('firstFrame')
     ui.solo.disabled = ui.training.disabled = ui.setup.disabled = ui.lineup.disabled = ui.online.disabled = ui.six.disabled = false
+    element<HTMLButtonElement>('how-to-play').disabled = element<HTMLButtonElement>('settings-button').disabled = false
     ui.loading.hidden = true
     requestAnimationFrame(frame)
     const room = roomCode(inviteRoom() ?? new URLSearchParams(location.search).get('room'))

@@ -1,0 +1,114 @@
+{
+  "browser": "156.0.8078.81",
+  "softwareGpu": true,
+  "tiers": [
+    {
+      "calls": 294,
+      "triangles": 117972,
+      "quality": "high",
+      "shadows": true,
+      "shadowSize": 2048,
+      "pixelRatio": 1,
+      "width": 1280,
+      "height": 720,
+      "geometries": 60,
+      "textures": 11,
+      "programs": 11,
+      "contextLost": false,
+      "disposed": false,
+      "contextReleased": false,
+      "boundary": null,
+      "frameP50": 479.1999999999989,
+      "frameP95": 507.10000000000036
+    },
+    {
+      "calls": 294,
+      "triangles": 100068,
+      "quality": "medium",
+      "shadows": true,
+      "shadowSize": 1024,
+      "pixelRatio": 1,
+      "width": 1280,
+      "height": 720,
+      "geometries": 60,
+      "textures": 11,
+      "programs": 11,
+      "contextLost": false,
+      "disposed": false,
+      "contextReleased": false,
+      "boundary": null,
+      "frameP50": 458.40000000000146,
+      "frameP95": 486.09999999999854
+    },
+    {
+      "calls": 176,
+      "triangles": 71212,
+      "quality": "low",
+      "shadows": false,
+      "shadowSize": 0,
+      "pixelRatio": 0.75,
+      "width": 960,
+      "height": 540,
+      "geometries": 60,
+      "textures": 9,
+      "programs": 18,
+      "contextLost": false,
+      "disposed": false,
+      "contextReleased": false,
+      "boundary": null,
+      "frameP50": 256.90000000000146,
+      "frameP95": 270.8000000000029
+    }
+  ],
+  "unchanged": true,
+  "memory": [
+    {
+      "geometries": 69,
+      "textures": 15
+    },
+    {
+      "geometries": 69,
+      "textures": 15
+    }
+  ],
+  "lifecycle": {
+    "old": {
+      "calls": 292,
+      "triangles": 92108,
+      "quality": "high",
+      "shadows": true,
+      "shadowSize": 2048,
+      "pixelRatio": 1,
+      "width": 1280,
+      "height": 720,
+      "geometries": 0,
+      "textures": 1,
+      "programs": 1,
+      "contextLost": false,
+      "disposed": true,
+      "contextReleased": true,
+      "boundary": null
+    },
+    "removed": true,
+    "recreated": {
+      "calls": 294,
+      "triangles": 117972,
+      "quality": "high",
+      "shadows": true,
+      "shadowSize": 2048,
+      "pixelRatio": 1,
+      "width": 1280,
+      "height": 720,
+      "geometries": 60,
+      "textures": 11,
+      "programs": 11,
+      "contextLost": false,
+      "disposed": false,
+      "contextReleased": false,
+      "boundary": null
+    },
+    "canvases": 1
+  },
+  "issues": [],
+  "warnings": []
+}

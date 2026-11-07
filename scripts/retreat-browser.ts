@@ -173,6 +173,9 @@ try {
   const replayEnd = await until(page, value => value.phase === 'dead', 'replay end')
   assert.deepEqual(replayEnd.outcome, settled.outcome)
   assert.deepEqual(replayEnd.innings, settled.innings)
+  assert.equal(await page.locator('#call-kicker').textContent(), 'REPLAY')
+  await page.getByRole('button', { name: 'Exit replay', exact: true }).click()
+  assert.equal(await page.locator('#call-kicker').textContent(), 'DELIVERY COMPLETE')
 
   await start(page)
   const single = await until(page, value => value.completedRuns === 1, 'safe completed single')

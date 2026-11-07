@@ -1,0 +1,221 @@
+/* Cricket game preparation panels; these rules are intentionally menu-scoped. */
+#setup-dialog, #lineup-dialog {
+  width: min(1180px, calc(100vw - 40px));
+  max-height: calc(100dvh - 32px);
+  padding: 22px 26px;
+  color: #f4f2e9;
+  background: linear-gradient(115deg, #113e2b, #061f1c 75%);
+  border: 1px solid #8daf7955;
+  border-top: 4px solid #cefa69;
+  border-radius: 2px;
+  box-shadow: 0 28px 100px #001811c9;
+  scrollbar-color: #466657 #092d26;
+  scrollbar-width: thin;
+}
+#setup-dialog .menu-heading, #lineup-dialog .menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 17px; border-bottom: 1px solid #bbd7a728; }
+#setup-dialog .menu-heading .eyebrow, #lineup-dialog .menu-heading .eyebrow { margin: 0 0 5px; color: #cefa69; font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+#setup-dialog h2, #lineup-dialog h2 { margin: 0; color: #fffdeb; font-size: clamp(29px, 3vw, 40px); font-weight: 800; font-style: italic; letter-spacing: -.025em; line-height: 1; }
+#setup-dialog .menu-close, #lineup-dialog .menu-close { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; border: 1px solid #c3d4ba50; border-radius: 0; background: #ffffff0a; color: #e9eee3; font: 28px/1 sans-serif; }
+#setup-dialog .menu-close:hover, #lineup-dialog .menu-close:hover { background: #cefa6922; border-color: #cefa69; }
+#setup-dialog .matchup-strip { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 15px 28px; margin-top: 17px; border-block: 1px solid #cefa6933; background: linear-gradient(100deg, #4b77134d, #071e15 48%, #8d342442); }
+#setup-dialog .matchup-team { display: flex; align-items: center; gap: 14px; }
+#setup-dialog .matchup-team > span { display: grid; gap: 3px; }
+#setup-dialog .matchup-team small { color: #becbaa; font-size: 8px; font-weight: 650; letter-spacing: .14em; }
+#setup-dialog .matchup-team strong { color: #f6f7df; font-size: clamp(17px, 2.2vw, 26px); font-weight: 800; font-style: italic; letter-spacing: -.02em; }
+#setup-dialog .team-badge { display: grid; place-items: center; width: 43px; height: 48px; background: #cefa69; color: #23411c; clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%); font: italic 800 28px/1 Georgia, serif; }
+#setup-dialog .rival { text-align: right; }
+#setup-dialog .rival .team-badge { color: #ffebd5; background: #b44734; }
+#setup-dialog .matchup-strip > i { color: #e6c877; font-size: 21px; font-weight: 900; }
+#setup-dialog .match-preparation-grid { display: grid; grid-template-columns: minmax(210px, .8fr) minmax(0, 1.5fr); gap: 18px; margin-top: 21px; }
+#setup-dialog .setup-preview { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 14px; min-width: 0; margin: 0; padding: 20px; overflow: hidden; border: 1px solid #8ab78b4d; border-radius: 0; background: radial-gradient(ellipse at 80% 20%, #537a3060, transparent 70%), #104a35; }
+#setup-dialog .setup-preview[data-venue="harbor"] { background: radial-gradient(ellipse at 80% 20%, #40958266, transparent 70%), #104838; }
+#setup-dialog .setup-preview[data-venue="citadel"] { background: radial-gradient(ellipse at 80% 20%, #b6a86450, transparent 70%), #364c30; }
+#setup-dialog .setup-preview-copy { position: relative; display: grid; gap: 7px; min-width: 0; }
+#setup-dialog .setup-preview-kicker { display: flex; align-items: center; gap: 6px; color: #cefa69; font-size: 9px; font-weight: 750; letter-spacing: .13em; }
+#setup-dialog .setup-preview-kicker i { width: 6px; height: 6px; background: currentColor; }
+#setup-dialog #setup-preview-name { color: #f7f5e4; font-size: clamp(21px, 2.2vw, 28px); font-weight: 800; font-style: italic; letter-spacing: -.025em; text-transform: uppercase; }
+#setup-dialog #setup-preview-detail, #setup-dialog #setup-preview-match { margin: 0; color: #c3d9bf; font-size: 11px; line-height: 1.5; }
+#setup-dialog #setup-format { justify-self: start; margin-top: 3px; padding: 6px 8px; border-left: 2px solid #cefa69; background: #0a2f2399; color: #e0eccf; font-size: 8px; font-weight: 750; letter-spacing: .1em; }
+#setup-dialog .venue-illustration { position: relative; width: 100%; height: 160px; flex: 0 0 auto; margin: 0; filter: drop-shadow(0 10px 10px #001c2460); }
+#setup-dialog .venue-shadow { fill: #052c2380; }
+#setup-dialog .preview-stand { fill: #254938; stroke: #8bb789; stroke-width: 1; }
+#setup-dialog .preview-stand-top { fill: #86a87a; }
+#setup-dialog .preview-grass { fill: #378349; stroke: #c7e49e; stroke-width: 2; }
+#setup-dialog .venue-stripes { fill: none; stroke: #8ac366; stroke-width: 11; opacity: .23; }
+#setup-dialog .preview-boundary { fill: none; stroke: #e4efc9; stroke-width: 1; }
+#setup-dialog .preview-ring { fill: none; stroke: #e1efc3; stroke-width: .8; stroke-dasharray: 3 4; opacity: .75; }
+#setup-dialog .preview-pitch { fill: #d0b57e; }
+#setup-dialog .preview-crease { fill: none; stroke: #fffcde; stroke-width: 1.5; }
+#setup-dialog .venue-stumps { stroke: #f9efc7; stroke-width: 1; }
+#setup-dialog .venue-floodlights { fill: none; stroke: #9cb99b; stroke-width: 2; }
+#setup-dialog .venue-floodlights .light-bank { fill: #e9f7c5; stroke: #6e9875; stroke-width: 2; }
+#setup-dialog .venue-fielders { fill: #faf4db; }
+#setup-dialog .setup-preview[data-venue="harbor"] .preview-stand-top { fill: #8fb7a4; }
+#setup-dialog .setup-preview[data-venue="citadel"] .preview-stand-top { fill: #b8aa85; }
+#setup-dialog .setup-form { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 14px; margin: 0; }
+#setup-dialog .setup-group { grid-column: auto; display: grid; grid-template-columns: 1fr; align-content: start; gap: 12px; margin: 0; padding: 14px; min-width: 0; border: 1px solid #a5c6a630; border-radius: 0; background: #c7eab207; }
+#setup-dialog .setup-group legend { padding: 0 7px; margin-left: -3px; color: #cefa69; font-size: 10px; letter-spacing: .02em; }
+#setup-dialog .setup-group legend b { color: #cefa69; font-size: 10px; font-weight: 750; }
+#setup-dialog .setup-group legend span { margin-left: 6px; color: #f1f1de; font-size: 10px; font-weight: 750; text-transform: uppercase; }
+#setup-dialog .setup-form label { min-width: 0; gap: 5px; color: #b5c9b9; font-size: 10px; font-weight: 600; }
+#setup-dialog .setup-form select { width: 100%; min-width: 0; min-height: 35px; padding: 7px 9px; color: #f4f2e9; background-color: #1c4133; border: 1px solid #adca9b40; border-radius: 0; font-size: 12px; line-height: 1.5; }
+#setup-dialog .setup-form select:hover { border-color: #cefa6980; }
+#setup-dialog .setup-actions, #lineup-dialog .setup-actions { position: sticky; bottom: -22px; z-index: 3; display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 20px -26px -22px; padding: 15px 26px; border-top: 1px solid #a5c6a63b; background: #071f18; }
+#setup-dialog .setup-actions button, #lineup-dialog .setup-actions button { flex: 0 0 auto; justify-content: center; min-height: 45px; padding: 12px 28px; border-radius: 0; font-size: 13px; font-weight: 800; font-style: italic; text-transform: uppercase; }
+#setup-dialog .setup-actions .primary, #lineup-dialog .setup-actions .primary { display: flex; gap: 32px; min-width: 175px; background: #cefa69; color: #133523; border: 1px solid #cefa69; box-shadow: inset -6px 0 #aad93f; }
+#setup-dialog .setup-actions .secondary, #lineup-dialog .setup-actions .secondary { border: 1px solid #a5c6a650; color: #d2dfcb; background: #183a2d; }
+#setup-dialog .setup-actions .primary:hover, #lineup-dialog .setup-actions .primary:hover { background: #e1ffa4; }
+#lineup-dialog .squad-banner { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 17px; padding: 14px 20px; border: 1px solid #b9d4933b; border-left: 4px solid #cefa69; border-radius: 0; background: linear-gradient(110deg, #275537, #112f24); }
+#lineup-dialog .squad-club { display: flex; align-items: center; gap: 14px; }
+#lineup-dialog .squad-club > span:last-child { display: grid; gap: 4px; }
+#lineup-dialog .squad-club small { color: #bdd79d; font-size: 8px; letter-spacing: .15em; font-weight: 650; }
+#lineup-dialog .squad-club strong { color: #f4f2e9; font-size: 26px; font-weight: 850; font-style: italic; line-height: 1.1; letter-spacing: -.025em; }
+#lineup-dialog .squad-club > span:last-child > span { color: #b3caae; font-size: 8px; letter-spacing: .08em; }
+#lineup-dialog .squad-crest { display: grid; place-content: center; width: 46px; height: 54px; color: #163a25; background: #cefa69; clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%); font-family: Georgia, serif; font-size: 30px; font-weight: 800; font-style: italic; line-height: .95; text-align: center; }
+#lineup-dialog .squad-crest span { margin-top: 4px; font: 7px/1 "Segoe UI", sans-serif; letter-spacing: .2em; }
+#lineup-dialog .squad-balance { display: flex; align-items: center; gap: 32px; text-align: center; }
+#lineup-dialog .squad-balance span { display: grid; gap: 4px; color: #bfd1b4; font-size: 8px; letter-spacing: .05em; }
+#lineup-dialog .squad-balance strong { color: #cefa69; font-size: 27px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; }
+#lineup-dialog .lineup-preview { height: clamp(95px, 13vh, 150px); margin: 0; border: 1px solid #b9d49335; border-top: 0; border-radius: 0; overflow: hidden; background: #062d24; }
+#lineup-dialog .lineup-preview canvas { display: block; width: 100%; height: 100% !important; object-fit: cover; object-position: 50% 44%; }
+#lineup-dialog .lineup-lists { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 19px; margin: 18px 0 15px; }
+#lineup-dialog .lineup-lists > section { min-width: 0; }
+#lineup-dialog .roster-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 22px; margin-bottom: 7px; padding-bottom: 7px; border-bottom: 2px solid #cefa6940; }
+#lineup-dialog .roster-heading h3 { margin: 0; color: #e5edce; font-size: 10px; font-weight: 750; letter-spacing: .08em; }
+#lineup-dialog .roster-heading > span { color: #92af9b; font-size: 8px; white-space: nowrap; }
+#lineup-dialog .lineup-lists ol, #lineup-dialog .lineup-lists ul { display: grid; align-content: start; gap: 5px; max-height: 280px; padding: 2px 5px 2px 2px; margin: 0; scrollbar-color: #527761 #12382c; scrollbar-width: thin; }
+#lineup-dialog .lineup-lists ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#lineup-dialog .lineup-lists li { display: flex; gap: 4px; min-width: 0; min-height: 49px; padding: 5px; border: 1px solid #bfd5ac22; border-left: 2px solid #badf6a5e; border-radius: 0; background: #163f30; }
+#lineup-dialog .lineup-lists li:hover { background: #1d4b38; border-color: #cefa6960; }
+#lineup-dialog .lineup-lists .roster-player { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 4px 6px; flex: 1; align-items: center; min-width: 0; }
+#lineup-dialog .roster-number { display: grid; place-items: center; width: 24px; height: 31px; align-self: center; color: #cde19b; background: #082f22; border-radius: 0; font-size: 13px; font-style: italic; font-weight: 700; }
+#lineup-dialog .roster-player b { color: #f4f2e9; font-size: 12px; line-height: 1; font-weight: 600; white-space: nowrap; }
+#lineup-dialog .roster-player small { justify-self: start; padding: 2px 4px; color: #bdd8a3; border-radius: 0; background: #9fc77818; font-size: 7px; font-weight: 600; text-transform: uppercase; }
+#lineup-dialog li[data-role="keeper"] .roster-player small { color: #efdc9f; background: #dbbb6620; }
+#lineup-dialog li[data-role="pace"] .roster-player small { color: #b5e2d6; background: #8be2c918; }
+#lineup-dialog li[data-role="spin"] .roster-player small { color: #d1c9e7; background: #cbb8ea18; }
+#lineup-dialog .lineup-lists .reserve-player { grid-template-columns: 1fr; gap: 5px; padding-left: 5px; }
+#lineup-dialog .lineup-lists .reserve-player small { grid-column: 1; }
+#lineup-dialog .lineup-lists .choice { min-width: 28px; min-height: 33px; padding: 5px 6px; border: 1px solid #c3d3b640; border-radius: 0; color: #cbdcc0; background: #ffffff05; font-size: 9px; font-weight: 650; }
+#lineup-dialog .lineup-lists .choice:hover:not(:disabled) { color: #cefa69; border-color: #cefa69; background: #cefa6910; }
+#lineup-dialog button:disabled { cursor: not-allowed; }
+#lineup-dialog .lineup-lists .choice:disabled { opacity: .25; }
+#lineup-dialog .squad-tip { margin-top: 11px; padding: 10px; border-left: 2px solid #e6c87780; color: #bdc9a5; background: #bddeb50a; font-size: 9px; line-height: 1.8; }
+#lineup-dialog .setup-actions { margin-top: 0; }
+#lineup-dialog #lineup-status { flex: 1 1 auto; min-height: auto; margin: 0; color: #f0c398; font-size: 11px; line-height: 1.5; }
+#lineup-dialog #lineup-status[data-ready="true"] { color: #cefa69; }
+#lineup-dialog #lineup-status[data-ready="true"]::before { content: '●'; margin-right: 7px; font-size: 8px; }
+@media (max-width: 1000px) {
+  #lineup-dialog .lineup-lists { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  #lineup-dialog .lineup-lists ol { grid-template-columns: 1fr; }
+  #setup-dialog .match-preparation-grid { grid-template-columns: minmax(190px, .7fr) minmax(0, 1.5fr); }
+  #setup-dialog .setup-group { padding: 12px; }
+  #setup-dialog .setup-preview { padding: 16px; }
+}
+@media (max-width: 720px) {
+  #setup-dialog .match-preparation-grid { grid-template-columns: 1fr; }
+  #setup-dialog .setup-preview { display: grid; grid-template-columns: 1fr 170px; gap: 8px 12px; padding: 15px; }
+  #setup-dialog .setup-preview-kicker { grid-column: 1; }
+  #setup-dialog .setup-preview-copy { grid-column: 1; }
+  #setup-dialog .venue-illustration { grid-column: 2; grid-row: 1 / 3; width: 170px; height: 115px; margin: auto; }
+  #setup-dialog .setup-form select { min-height: 40px; }
+  #lineup-dialog .squad-balance { gap: 18px; }
+  #lineup-dialog .lineup-lists { grid-template-columns: 1fr; }
+  #lineup-dialog .lineup-lists ol { max-height: 280px; }
+  #lineup-dialog .lineup-lists ul { max-height: 200px; }
+}
+@media (max-width: 500px) {
+  #setup-dialog, #lineup-dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); padding: 16px; }
+  #setup-dialog .menu-heading, #lineup-dialog .menu-heading { gap: 10px; padding-bottom: 13px; }
+  #setup-dialog h2, #lineup-dialog h2 { font-size: 29px; }
+  #setup-dialog .menu-heading .eyebrow, #lineup-dialog .menu-heading .eyebrow { font-size: 7px; letter-spacing: .1em; }
+  #setup-dialog .menu-close, #lineup-dialog .menu-close { flex-basis: 33px; width: 33px; height: 33px; font-size: 24px; }
+  #setup-dialog .matchup-strip { padding: 12px; gap: 10px; }
+  #setup-dialog .matchup-team { gap: 7px; }
+  #setup-dialog .matchup-team strong { font-size: 16px; }
+  #setup-dialog .matchup-team small { font-size: 6px; }
+  #setup-dialog .team-badge { width: 28px; height: 35px; font-size: 21px; }
+  #setup-dialog .matchup-strip > i { font-size: 14px; }
+  #setup-dialog .setup-preview { position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 142px; padding: 15px; }
+  #setup-dialog .setup-preview-copy { z-index: 1; width: 225px; }
+  #setup-dialog .venue-illustration { position: absolute; right: -39px; bottom: -8px; width: 175px; height: 125px; opacity: .24; }
+  #setup-dialog #setup-preview-name { font-size: 23px; }
+  #setup-dialog .setup-form { gap: 10px; }
+  #setup-dialog .setup-group { padding: 10px; gap: 12px; }
+  #setup-dialog .setup-group legend { font-size: 9px; padding: 0 4px; }
+  #setup-dialog .setup-group legend span { font-size: 8px; margin-left: 4px; }
+  #setup-dialog .setup-form select { min-height: 42px; font-size: 11px; padding: 8px 5px; }
+  #setup-dialog .setup-actions, #lineup-dialog .setup-actions { bottom: -16px; margin-right: -16px; margin-left: -16px; margin-bottom: -16px; padding: 13px 16px; gap: 9px; }
+  #setup-dialog .setup-actions button, #lineup-dialog .setup-actions button { min-height: 44px; padding: 11px 19px; }
+  #setup-dialog .setup-actions .primary, #lineup-dialog .setup-actions .primary { gap: 17px; min-width: 150px; }
+  #lineup-dialog .squad-banner { flex-wrap: wrap; gap: 15px; padding: 14px; }
+  #lineup-dialog .squad-club strong { font-size: 24px; }
+  #lineup-dialog .squad-club > span:last-child > span { font-size: 6px; }
+  #lineup-dialog .squad-balance { width: 100%; justify-content: space-around; padding-top: 12px; border-top: 1px solid #c7e1ab30; }
+  #lineup-dialog .squad-balance span { display: flex; align-items: center; gap: 6px; font-size: 7px; }
+  #lineup-dialog .squad-balance strong { font-size: 22px; }
+  #lineup-dialog .roster-heading h3 { font-size: 9px; }
+  #lineup-dialog .roster-heading > span { font-size: 7px; }
+  #lineup-dialog .lineup-lists .choice { min-width: 31px; min-height: 44px; padding: 6px; }
+  #lineup-dialog .setup-actions { flex-wrap: wrap; }
+  #lineup-dialog #lineup-status { flex-basis: 100%; }
+}
+@media (max-width: 350px) {
+  #setup-dialog h2, #lineup-dialog h2 { font-size: 26px; }
+  #setup-dialog .setup-form { grid-template-columns: 1fr; }
+  #setup-dialog .setup-group { grid-template-columns: 1fr 1fr; }
+  #setup-dialog .matchup-strip { padding-inline: 6px; gap: 6px; }
+  #setup-dialog .matchup-team { gap: 3px; }
+  #setup-dialog .matchup-team strong { font-size: 13px; }
+  #setup-dialog .team-badge { flex: 0 0 22px; width: 22px; height: 29px; }
+  #lineup-dialog .lineup-lists li { padding: 5px 4px; gap: 3px; }
+}
+@media (min-width: 900px) {
+  #lineup-dialog .lineup-lists { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); }
+  #lineup-dialog .lineup-lists ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) and (min-height: 721px) {
+  #lineup-dialog .lineup-lists ol { max-height: none; }
+}
+@media (min-width: 721px) and (max-height: 720px) {
+  #setup-dialog, #lineup-dialog { padding-top: 15px; }
+  #setup-dialog .menu-heading, #lineup-dialog .menu-heading { padding-bottom: 11px; }
+  #setup-dialog h2, #lineup-dialog h2 { font-size: 30px; }
+  #setup-dialog .matchup-strip { margin-top: 12px; padding-block: 9px; }
+  #setup-dialog .match-preparation-grid { margin-top: 15px; }
+  #setup-dialog .setup-group { gap: 8px; padding: 10px; }
+  #setup-dialog .setup-form select { min-height: 32px; padding-block: 5px; }
+  #setup-dialog .venue-illustration { height: 125px; }
+  #setup-dialog .setup-actions, #lineup-dialog .setup-actions { padding-block: 11px; }
+  #lineup-dialog .squad-banner { padding-block: 10px; margin-top: 12px; }
+  #lineup-dialog .lineup-preview { height: 80px; }
+  #lineup-dialog .lineup-lists { margin-top: 12px; }
+  #lineup-dialog .lineup-lists ol, #lineup-dialog .lineup-lists ul { max-height: 210px; }
+}
+@media (min-width: 721px) and (max-height: 480px) {
+  #setup-dialog, #lineup-dialog { padding-top: 10px; }
+  #setup-dialog .menu-heading, #lineup-dialog .menu-heading { padding-bottom: 8px; }
+  #setup-dialog .menu-heading .eyebrow, #lineup-dialog .menu-heading .eyebrow { display: none; }
+  #setup-dialog h2, #lineup-dialog h2 { font-size: 27px; }
+  #setup-dialog .menu-close, #lineup-dialog .menu-close { height: 30px; width: 30px; flex-basis: 30px; font-size: 23px; }
+  #setup-dialog .matchup-strip { margin-top: 9px; padding-block: 6px; }
+  #setup-dialog .team-badge { width: 30px; height: 34px; font-size: 22px; }
+  #setup-dialog .matchup-team strong { font-size: 18px; }
+  #setup-dialog .matchup-team small { font-size: 6px; }
+  #setup-dialog .match-preparation-grid { margin-top: 11px; }
+  #setup-dialog .setup-group { gap: 7px; padding: 8px 10px; }
+  #setup-dialog .setup-form select { min-height: 30px; padding-block: 4px; }
+  #setup-dialog .venue-illustration { height: 95px; }
+  #setup-dialog .setup-preview { gap: 8px; padding: 13px; }
+  #setup-dialog #setup-preview-name { font-size: 21px; }
+  #setup-dialog .setup-actions, #lineup-dialog .setup-actions { padding-block: 9px; }
+  #setup-dialog .setup-actions button, #lineup-dialog .setup-actions button { min-height: 39px; padding-block: 9px; }
+  #lineup-dialog .squad-banner { margin-top: 9px; padding-block: 7px; }
+  #lineup-dialog .squad-crest { width: 33px; height: 39px; font-size: 23px; }
+  #lineup-dialog .squad-club small, #lineup-dialog .squad-club > span:last-child > span { display: none; }
+  #lineup-dialog .squad-club strong { font-size: 23px; }
+  #lineup-dialog .squad-balance strong { font-size: 22px; }
+  #lineup-dialog .lineup-preview { display: none; }
+  #lineup-dialog .lineup-lists { margin-top: 9px; }
+  #lineup-dialog .lineup-lists ol, #lineup-dialog .lineup-lists ul { max-height: calc(100dvh - 210px); }
+}

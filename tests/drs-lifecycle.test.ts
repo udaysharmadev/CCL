@@ -62,7 +62,6 @@ function game() {
   const setup = require('./setup.ts')
   const settings = require('./settings.ts')
   const adapters: Record<string, unknown> = {
-    './style.css': {},
     './platform.ts': platform,
     './setup.ts': { ...setup, getSettings: () => ({ ...setup.DEFAULT_SETTINGS }), getLineup: () => [...require('./match-data.ts').DEFAULT_LINEUP], setupMenus: () => ({ openSetup() {}, openLineup() {} }) },
     './settings.ts': { ...settings, saveCareer() {}, saveSettings() {} },
@@ -78,7 +77,7 @@ function game() {
     './telemetry.ts': { mark() {}, sample() {}, readTelemetry: () => ({}) },
   }
   const context = createContext({
-    exports: {}, require: (name: string) => adapters[name] ?? require(name),
+    exports: {}, require: (name: string) => name.endsWith('.css') ? {} : adapters[name] ?? require(name),
     document: { getElementById: node, querySelector: node, createElement: () => new Node(), addEventListener() {}, body: new Node() },
     window: {}, location: { search: '?seed=41', href: 'http://localhost/?seed=41' },
     URL, URLSearchParams, Option: Node, navigator: {},

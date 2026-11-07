@@ -77,6 +77,12 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
   const count = document.querySelector<HTMLElement>('#lineup-count')!
   const status = document.querySelector<HTMLElement>('#lineup-status')!
   const commit = document.querySelector<HTMLButtonElement>('#lineup-save')!
+  const squadCounts = {
+    batters: document.querySelector<HTMLElement>('#lineup-batters')!,
+    bowlers: document.querySelector<HTMLElement>('#lineup-bowlers')!,
+    keepers: document.querySelector<HTMLElement>('#lineup-keepers')!,
+    reserves: document.querySelector<HTMLElement>('#bench-count')!,
+  }
   const selects = {
     overs: document.querySelector<HTMLSelectElement>('#setup-overs')!,
     venue: document.querySelector<HTMLSelectElement>('#setup-venue')!,
@@ -89,8 +95,13 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
     fielding: document.querySelector<HTMLSelectElement>('#setup-fielding')!,
   }
   const format = document.querySelector<HTMLElement>('#setup-format')!
+  const venuePreview = document.querySelector<HTMLElement>('#setup-preview')!
+  const previewName = document.querySelector<HTMLElement>('#setup-preview-name')!
+  const previewDetail = document.querySelector<HTMLElement>('#setup-preview-detail')!
+  const previewMatch = document.querySelector<HTMLElement>('#setup-preview-match')!
   let draft: string[] = []
   const preview = document.createElement('div')
+  preview.className = 'lineup-preview'
   lineup.querySelector('.lineup-lists')!.before(preview)
   let room: ReturnType<typeof createDressingRoom> | undefined
 
@@ -106,8 +117,13 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
 
   function showFormat() {
     format.textContent = Number(selects.overs.value) < 5 ? 'ARCADE SHORT MATCH' : 'LIMITED-OVERS ARCADE'
+    const venue = validChoice(VENUES, selects.venue.value, 'suncrest')
+    venuePreview.dataset.venue = venue
+    previewName.textContent = VENUE_NAMES[venue]
+    previewDetail.textContent = `${PITCH_LABELS[validChoice(PITCH_PRESETS, selects.pitch.value, 'dry')]} · ${WEATHER_LABELS[validChoice(WEATHER_PRESETS, selects.weather.value, 'clear')]}`
+    previewMatch.textContent = `${selects.overs.value} overs per side · ${selects.toss.value === 'bowl' ? 'Bowling first' : 'Batting first'} · ${selects.difficulty.value}`
   }
-  selects.overs.addEventListener('change', showFormat)
+  for (const select of Object.values(selects)) select.addEventListener('change', showFormat)
   form.addEventListener('submit', (event) => {
     event.preventDefault()
     const settings: SoloSettings = {
@@ -141,14 +157,29 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
   function renderLineup(focus?: string) {
     const error = lineupError(draft)
     count.textContent = `PLAYING XI · ${draft.length}/11`
-    status.textContent = error || 'Lineup ready.'
+    status.textContent = error || 'Your XI is match ready.'
+    status.dataset.ready = String(!error)
+    const selected = ROSTER.filter(({ name }) => draft.includes(name))
+    squadCounts.batters.textContent = String(selected.filter(({ role }) => role === 'Batter').length)
+    squadCounts.bowlers.textContent = String(selected.filter(({ role }) => role === 'Pace' || role === 'Spin').length)
+    squadCounts.keepers.textContent = String(selected.filter(({ role }) => role === 'Keeper').length)
+    squadCounts.reserves.textContent = `${ROSTER.length - draft.length} players`
     commit.disabled = Boolean(error)
     if (room) room.render(draft)
     chosen.replaceChildren(...draft.map((name, index) => {
       const role = ROSTER.find((player) => player.name === name)?.role
       const row = document.createElement('li')
+      row.dataset.role = role?.toLowerCase()
       const player = document.createElement('span')
-      player.textContent = `${index + 1}. ${name} · ${role}`
+      player.className = 'roster-player'
+      const number = document.createElement('i')
+      number.className = 'roster-number'
+      number.textContent = String(index + 1).padStart(2, '0')
+      const playerName = document.createElement('b')
+      playerName.textContent = name
+      const playerRole = document.createElement('small')
+      playerRole.textContent = role ?? ''
+      player.append(number, playerName, playerRole)
       const move = (step: number, label: string, disabled: boolean) => listButton(label, `Move ${name} ${step < 0 ? 'up' : 'down'}`, () => {
         [draft[index], draft[index + step]] = [draft[index + step], draft[index]]
         renderLineup(`Move ${name} ${step < 0 ? 'up' : 'down'}`)
@@ -162,8 +193,14 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
     }))
     bench.replaceChildren(...ROSTER.filter(({ name }) => !draft.includes(name)).map(({ name, role }) => {
       const row = document.createElement('li')
+      row.dataset.role = role.toLowerCase()
       const player = document.createElement('span')
-      player.textContent = `${name} · ${role}`
+      player.className = 'roster-player reserve-player'
+      const playerName = document.createElement('b')
+      playerName.textContent = name
+      const playerRole = document.createElement('small')
+      playerRole.textContent = role
+      player.append(playerName, playerRole)
       row.append(player, listButton('Select', `Select ${name}`, () => {
         draft.push(name)
         renderLineup(`Bench ${name}`)
@@ -175,7 +212,9 @@ export function setupMenus(start: (settings: SoloSettings) => void) {
   }
 
   document.querySelector('#setup-cancel')!.addEventListener('click', () => setup.close())
+  document.querySelector('#setup-dismiss')!.addEventListener('click', () => setup.close())
   document.querySelector('#lineup-cancel')!.addEventListener('click', () => lineup.close())
+  document.querySelector('#lineup-dismiss')!.addEventListener('click', () => lineup.close())
   commit.addEventListener('click', () => {
     if (lineupError(draft)) return
     if (save(LINEUP_KEY, JSON.stringify(draft))) lineup.close()

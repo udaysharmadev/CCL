@@ -1,6 +1,10 @@
 import * as THREE from 'three'
+import { createPlayerMotion, samplePlayerMotion, createFieldingMotion, sampleFieldingMotion, type PlayerMotion } from './player-motion.ts'
 import { bladePose, elbowPosition, guardPose, shotFamily, smooth, strikerRootZ } from './batting-motion.ts'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
+import { GRAPHICS_QUALITY, renderPixelRatio, type GraphicsQuality } from './graphics-quality.ts'
+import { createGroundEffects } from './ground-effects.ts'
+import { QualityMaterials } from './quality-materials.ts'
 import {
   BOUNDARY, DT, Delivery, FIELDERS, KEEPER, PITCH_LENGTH, fieldPositions, isSpinDelivery,
   type BoundaryFlight, type DeliveryKind, type FieldPreset, type PitchPreset, type Shot, type WeatherPreset, type Vec3,
@@ -40,9 +44,9 @@ const CENTER = PITCH_LENGTH / 2
 const BOX = new THREE.BoxGeometry()
 const FOG = 0xb7d9eb
 const WEATHER_LIGHT = {
-  clear: { horizon: 0xd2ebf2, zenith: 0x4ca7e3, fog: FOG, far: 240, clouds: 0, sun: 2.55, ambient: 1.8, wind: 1 },
-  overcast: { horizon: 0xc2d0d2, zenith: 0x7e96a2, fog: 0xb5c3c7, far: 174, clouds: .72, sun: 1.36, ambient: 2.12, wind: .7 },
-  breezy: { horizon: 0xd6eced, zenith: 0x498cbd, fog: 0xb7d4dd, far: 221, clouds: .27, sun: 2.26, ambient: 1.91, wind: 3.1 },
+  clear: { horizon: 0xe3ece8, zenith: 0x438dcc, fog: FOG, far: 250, clouds: .28, sun: 3.1, ambient: 1.6, wind: 1 },
+  overcast: { horizon: 0xd3dadd, zenith: 0x869dae, fog: 0xb5c3c7, far: 205, clouds: .88, sun: 1.25, ambient: 2.05, wind: .7 },
+  breezy: { horizon: 0xdae7e7, zenith: 0x4c8cae, fog: 0xb7d4dd, far: 235, clouds: .48, sun: 2.65, ambient: 1.7, wind: 3.1 },
 } as const satisfies Record<WeatherPreset, object>
 const PITCH_COLOR = {
   dry: [1, 1, 1],
@@ -57,7 +61,7 @@ function noise(n: number) {
 }
 
 function material(color: THREE.ColorRepresentation) {
-  return new THREE.MeshLambertMaterial({ color })
+  return new THREE.MeshStandardMaterial({ color, roughness: .82, metalness: 0 })
 }
 
 function mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, surface: THREE.Material, x = 0, y = 0, z = 0) {
@@ -78,6 +82,33 @@ function group(parent: THREE.Object3D, x = 0, y = 0, z = 0) {
   model.position.set(x, y, z)
   parent.add(model)
   return model
+}
+
+/** Merge only rigid siblings; joints and hand targets remain independent. */
+function batchRigidParts(parent: THREE.Object3D) {
+  const buckets = new Map<THREE.Material, THREE.Mesh[]>()
+  for (const child of parent.children) {
+    if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) continue
+    const bucket = buckets.get(child.material) ?? []
+    bucket.push(child)
+    buckets.set(child.material, bucket)
+  }
+  for (const [surface, parts] of buckets) {
+    if (parts.length < 2) continue
+    const geometries = parts.map((part) => {
+      part.updateMatrix()
+      const geometry = part.geometry.clone().applyMatrix4(part.matrix)
+      if (!geometry.index) return geometry
+      const expanded = geometry.toNonIndexed()
+      geometry.dispose()
+      return expanded
+    })
+    const geometry = mergeGeometries(geometries)
+    geometries.forEach((part) => part.dispose())
+    if (!geometry) continue
+    parts.forEach((part) => parent.remove(part))
+    mesh(parent, geometry, surface)
+  }
 }
 
 function canvasMap(width: number, height: number, paint: (context: CanvasRenderingContext2D) => void) {
@@ -148,7 +179,7 @@ class GroundBatch {
     const stadium = mergeGeometries(this.parts)
     for (const part of this.parts) part.dispose()
     this.parts.length = 0
-    if (stadium) mesh(parent, stadium, new THREE.MeshLambertMaterial({ vertexColors: true }))
+    if (stadium) mesh(parent, stadium, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .87 }))
   }
 }
 
@@ -159,10 +190,12 @@ function makeSky(scene: THREE.Scene) {
   const horizon = { value: new THREE.Color() }
   const zenith = { value: new THREE.Color() }
   const clouds = { value: 0 }
+  const skyTime = { value: 0 }
+  const skyDetail = { value: 1 }
   const sky = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
-    uniforms: { horizon, zenith, clouds },
+    uniforms: { horizon, zenith, clouds, skyTime, skyDetail },
     vertexShader: `
       varying vec3 direction;
       void main() {
@@ -174,28 +207,50 @@ function makeSky(scene: THREE.Scene) {
       uniform vec3 horizon;
       uniform vec3 zenith;
       uniform float clouds;
+      uniform float skyTime;
+      uniform float skyDetail;
       varying vec3 direction;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float cloudNoise(vec2 p) {
+        vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+        return mix(mix(hash(i), hash(i + vec2(1., 0.)), f.x),
+          mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), f.x), f.y);
+      }
       void main() {
         vec3 ray = normalize(direction);
         float height = max(0., ray.y);
         vec3 color = mix(horizon, zenith, pow(smoothstep(0., .55, height), .58));
-        float glow = pow(max(0., dot(ray, normalize(vec3(-.58, .39, .72)))), 12.) * (1. - clouds);
-        if (clouds > 0.) {
-          float cloud = smoothstep(.15, .68, sin(ray.y * 24. + sin(ray.x * 8.) * 2.) * .5 + sin(ray.z * 17.) * .28);
-          color = mix(color, vec3(.79, .83, .84), cloud * clouds * smoothstep(.015, .12, height));
+        float sunDot = max(0., dot(ray, normalize(vec3(-.58, .75, -.34))));
+        float glow = pow(sunDot, 18.) * (1. - clouds * .7);
+        if (clouds > 0. && skyDetail > .5) {
+          vec2 uv = ray.xz / max(.18, ray.y) * 1.25 + vec2(skyTime * .004, skyTime * .001);
+          float field = cloudNoise(uv) * .57 + cloudNoise(uv * 2.1) * .28 + cloudNoise(uv * 4.3) * .15;
+          float cloud = smoothstep(.67 - clouds * .31, .86 - clouds * .22, field);
+          vec3 cloudColor = mix(vec3(.66, .73, .79), vec3(.96, .97, .95), smoothstep(.43, .76, field));
+          color = mix(color, cloudColor, cloud * smoothstep(.018, .13, height));
         }
-        gl_FragColor = vec4(mix(color, vec3(1., .94, .78), glow * .27), 1.);
+        color = mix(color, vec3(1., .93, .76), glow * .26 + pow(sunDot, 1600.) * .64);
+        gl_FragColor = vec4(color, 1.);
+        #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }
     `,
   })
   mesh(scene, new THREE.SphereGeometry(260, 24, 12), sky, 0, 0, CENTER)
-  const ambient = new THREE.HemisphereLight(0xe9f5ff, 0x6d7956, 1.8)
+  const ambient = new THREE.HemisphereLight(0xdceeff, 0x576449, 1.6)
   scene.add(ambient)
   const sun = new THREE.DirectionalLight(0xffe6ba, 2.55)
   sun.position.set(-44, 57, -26)
+  sun.target.position.set(0, 0, CENTER)
+  scene.add(sun.target)
+  // A single pitch-sized map gives readable player shadows without rendering
+  // thousands of stadium/crowd triangles into a full-ground shadow atlas.
+  Object.assign(sun.shadow.camera, { left: -19, right: 19, top: 24, bottom: -24, near: 1, far: 140 })
+  sun.shadow.bias = -.00018
+  sun.shadow.normalBias = .018
+  sun.shadow.radius = 2
   scene.add(sun)
-  return (weather: WeatherPreset) => {
+  return { sun, skyTime, skyDetail, setWeather(weather: WeatherPreset) {
     const light = WEATHER_LIGHT[weather]
     horizon.value.setHex(light.horizon)
     zenith.value.setHex(light.zenith)
@@ -205,30 +260,73 @@ function makeSky(scene: THREE.Scene) {
     ambient.intensity = light.ambient
     sun.intensity = light.sun
     sun.color.setHex(weather === 'overcast' ? 0xe2e9f0 : 0xffe6ba)
-  }
+  } }
 }
 
 function makeField(scene: THREE.Scene) {
-  const outside = mesh(scene, new THREE.CircleGeometry(125, 72), material(0x52784b), 0, -.035, CENTER)
+  const outside = mesh(scene, new THREE.CircleGeometry(125, 72), material(0x36583b), 0, -.035, CENTER)
   outside.rotation.x = -Math.PI / 2
   const grassMap = canvasMap(512, 512, (ctx) => {
     const pixels = ctx.createImageData(512, 512)
     for (let y = 0; y < 512; y++) {
       for (let x = 0; x < 512; x++) {
         const i = (y * 512 + x) * 4
-        const strip = Math.floor((y + x * .37) / 35) % 2
-        const fleck = noise(i) * 8 + 1.35 * Math.sin(y * .19) + 1.5 * Math.sin(x * .08 + y * .05)
-        pixels.data[i] = 41 + strip * 14 + fleck
-        pixels.data[i + 1] = 112 + strip * 12 + fleck
-        pixels.data[i + 2] = 54 + strip * 3 + fleck * .5
+        const strip = Math.floor((y + x * .22) / 34) % 2
+        const fleck = noise(i) * 6 + 1.35 * Math.sin(y * .19) + 1.5 * Math.sin(x * .08 + y * .05)
+        pixels.data[i] = 34 + strip * 11 + fleck
+        pixels.data[i + 1] = 88 + strip * 14 + fleck
+        pixels.data[i + 2] = 43 + strip * 5 + fleck * .5
         pixels.data[i + 3] = 255
       }
     }
     ctx.putImageData(pixels, 0, 0)
   })
   grassMap.anisotropy = 4
-  const grass = mesh(scene, new THREE.CircleGeometry(BOUNDARY + 4.5, 128), new THREE.MeshLambertMaterial({ map: grassMap }), 0, -.005, CENTER)
+  const groundDetail = canvasMap(128, 128, (ctx) => {
+    const pixels = ctx.createImageData(128, 128)
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      const value = 96 + noise(i + 43) * 100
+      pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = value
+      pixels.data[i + 3] = 255
+    }
+    ctx.putImageData(pixels, 0, 0)
+  })
+  groundDetail.colorSpace = THREE.NoColorSpace
+  groundDetail.wrapS = groundDetail.wrapT = THREE.RepeatWrapping
+  groundDetail.repeat.set(72, 72)
+  groundDetail.anisotropy = 4
+  const grass = mesh(scene, new THREE.CircleGeometry(BOUNDARY + 4.5, 128), new THREE.MeshStandardMaterial({
+    map: grassMap, roughness: 1, bumpMap: groundDetail, bumpScale: .032,
+  }), 0, -.005, CENTER)
   grass.rotation.x = -Math.PI / 2
+  grass.receiveShadow = true
+  // Inactive strips keep some grass. A feathered, mottled square avoids the
+  // solid-color rectangular slabs that overpower the active wicket in close-up.
+  const squareMap = canvasMap(512, 512, (ctx) => {
+    const pixels = ctx.createImageData(512, 512)
+    for (let y = 0; y < 512; y++) for (let x = 0; x < 512; x++) {
+      const i = (y * 512 + x) * 4
+      const groundX = (x / 512 - .5) * 11.5
+      const sideDistance = Math.min(Math.abs(groundX - 3.3), Math.abs(groundX + 3.3))
+      const patch = Math.sin(x * .071 + Math.sin(y * .041)) * Math.cos(y * .053) * .5 + .5
+      const strip = (1 - THREE.MathUtils.smoothstep(sideDistance, .70, 1.08))
+        * THREE.MathUtils.smoothstep(Math.min(y, 512 - y), 10, 50) * (.64 + patch * .26)
+      const fleck = (noise(i + 53) - .5) * 21 + patch * 9
+      pixels.data[i] = 42 + strip * 67 + fleck
+      pixels.data[i + 1] = 85 + strip * 15 + fleck
+      pixels.data[i + 2] = 40 + strip * 17 + fleck * .7
+      pixels.data[i + 3] = 255 * THREE.MathUtils.smoothstep(Math.min(x, 512 - x, y, 512 - y), 0, 22)
+    }
+    ctx.putImageData(pixels, 0, 0)
+  })
+  squareMap.anisotropy = 4
+  const squareDetail = groundDetail.clone()
+  squareDetail.repeat.set(9, 20)
+  const squareSurface = new THREE.MeshStandardMaterial({ map: squareMap, roughness: 1,
+    bumpMap: squareDetail, bumpScale: .018, transparent: true, depthWrite: false })
+  const square = mesh(scene, new THREE.PlaneGeometry(11.5, PITCH_LENGTH + 4.9), squareSurface, 0, .002, CENTER)
+  square.rotation.x = -Math.PI / 2
+  square.receiveShadow = true
   const pitchMap = canvasMap(128, 768, (ctx) => {
     const pixels = ctx.createImageData(128, 768)
     for (let y = 0; y < 768; y++) {
@@ -246,13 +344,34 @@ function makeField(scene: THREE.Scene) {
       }
     }
     ctx.putImageData(pixels, 0, 0)
+    // Footmarks gather around the popping creases, with fine dry surface cracks.
+    for (const end of [104, 664]) {
+      const wear = ctx.createRadialGradient(64, end, 5, 64, end, 51)
+      wear.addColorStop(0, '#c2a17072')
+      wear.addColorStop(1, '#c2a17000')
+      ctx.fillStyle = wear
+      ctx.fillRect(0, end - 54, 128, 108)
+      ctx.strokeStyle = '#80643b50'
+      ctx.lineWidth = .6
+      for (let i = 0; i < 16; i++) {
+        const x = 12 + noise(i + end) * 104, y = end - 43 + noise(i + 271) * 86
+        ctx.beginPath()
+        ctx.moveTo(x, y)
+        ctx.lineTo(x + 2, y + 5)
+        ctx.lineTo(x - 1, y + 10)
+        ctx.stroke()
+      }
+    }
     ctx.fillStyle = '#6f542b24'
     for (let i = 0; i < 95; i++) ctx.fillRect(18 + 92 * noise(i + 52), 40 + 690 * noise(i + 90), .5 + noise(i + 60) * 2, 3 + noise(i) * 14)
   })
   pitchMap.anisotropy = 4
-  const pitchSurface = new THREE.MeshLambertMaterial({ map: pitchMap })
+  const pitchDetail = groundDetail.clone()
+  pitchDetail.repeat.set(3, 22)
+  const pitchSurface = new THREE.MeshStandardMaterial({ map: pitchMap, roughness: .96, bumpMap: pitchDetail, bumpScale: .014 })
   const pitch = mesh(scene, new THREE.PlaneGeometry(3.05, PITCH_LENGTH + 4.7), pitchSurface, 0, .012, CENTER)
   pitch.rotation.x = -Math.PI / 2
+  pitch.receiveShadow = true
 
   const crease = material(0xf6efda)
   for (const end of [0, PITCH_LENGTH]) {
@@ -262,7 +381,7 @@ function makeField(scene: THREE.Scene) {
     for (const x of [-1.32, 1.32]) box(scene, crease, x, .019, end + side * .45, .045, .009, 2.02)
   }
 
-  const rope = mesh(scene, new THREE.TorusGeometry(BOUNDARY, .11, 5, 180), material(0xf2d67d), 0, .075, CENTER)
+  const rope = mesh(scene, new THREE.TorusGeometry(BOUNDARY, .10, 6, 180), material(0xf2e9c8), 0, .075, CENTER)
   rope.rotation.x = -Math.PI / 2
   const marks = new GroundBatch()
   for (let i = 0; i < 48; i++) {
@@ -432,6 +551,13 @@ function addStands(parent: THREE.Object3D, venue: Venue, motion: { time: { value
       model.band(a + .008, b - .008, endRadius + .4, endRadius + 1.2, 10.25, 10.25, 3.5, 0x527883)
       model.band(a + .008, b - .008, endRadius + .32, endRadius + 1.22, 7.43, 7.43, .18, 0x284a5b)
       model.band(a + .008, b - .008, endRadius + .32, endRadius + 1.22, 9.98, 9.98, .22, 0xbed4c5)
+      // Glazed hospitality level and repeated mullions give the roof a structure.
+      model.band(a + .01, b - .01, endRadius + .29, endRadius + .34, 9.64, 9.64, 1.73, 0x244957)
+      for (let bay = 1; bay < 7; bay++) {
+        const angle = THREE.MathUtils.lerp(a, b, bay / 7)
+        const upright = polar(endRadius + .28, angle, 8.78)
+        model.block(0xa8bcbc, upright.x, upright.y, upright.z, .09, 1.82, .10, angle)
+      }
       model.band(a + .002, b - .002, 72.8, endRadius + 2.15, 13.0, 11.37, .31, 0xeee5ce)
       model.band(a + .002, b - .002, 72.64, 73.24, 13.04, 12.95, .63, 0x274a60)
       model.band(a + .002, b - .002, 72.60, 72.75, 13.05, 13.05, .21, 0x67cbc1)
@@ -503,7 +629,10 @@ function addStands(parent: THREE.Object3D, venue: Venue, motion: { time: { value
         transformed.x += wave * .025;
       `)
     }
+    // Shuffle once so lowering instance count thins all stands evenly.
+    crowdPoints.sort((a, b) => noise(a.position.x * 91 + a.position.z) - noise(b.position.x * 91 + b.position.z))
     const crowd = new THREE.InstancedMesh(crowdGeometry, crowdMaterial, crowdPoints.length)
+    crowd.userData.crowdCapacity = crowdPoints.length
     const transform = new THREE.Object3D()
     const color = new THREE.Color()
     crowdPoints.forEach((fan, index) => {
@@ -571,12 +700,15 @@ function makeSigns(parent: THREE.Object3D, venue: Venue) {
     ctx.fillText('CRAZY CRICKET LEAGUE', 256, 41)
   })
   const board = new THREE.MeshBasicMaterial({ map: ribbon, side: THREE.DoubleSide })
+  const boards: THREE.BufferGeometry[] = []
   for (let i = 0; i < 16; i++) {
     const angle = i * TAU / 16
     const position = polar(67.67, angle, .75)
-    const model = mesh(parent, new THREE.PlaneGeometry(10.8, 1.04), board, position.x, position.y, position.z)
-    model.rotation.y = angle + Math.PI
+    boards.push(new THREE.PlaneGeometry(10.8, 1.04).rotateY(angle + Math.PI).translate(position.x, position.y, position.z))
   }
+  const perimeter = mergeGeometries(boards)
+  boards.forEach((geometry) => geometry.dispose())
+  if (perimeter) mesh(parent, perimeter, board)
 }
 
 function shadowSurface() {
@@ -597,30 +729,72 @@ function makeShadow(parent: THREE.Object3D, surface: THREE.MeshBasicMaterial, ra
   return model
 }
 
+let fabricMap: THREE.CanvasTexture | undefined
 function palette(shirt: number, pants: number, trim: number) {
-  return { shirt: material(shirt), pants: material(pants), trim: material(trim) }
+  fabricMap ??= canvasMap(64, 64, (ctx) => {
+    ctx.fillStyle = '#777777'
+    ctx.fillRect(0, 0, 64, 64)
+    for (let i = 0; i < 64; i += 4) {
+      ctx.fillStyle = '#aaaaaa'
+      ctx.fillRect(i, 0, 1, 64)
+      ctx.fillStyle = '#999999'
+      ctx.fillRect(0, i, 64, 1)
+    }
+  })
+  fabricMap.colorSpace = THREE.NoColorSpace
+  fabricMap.wrapS = fabricMap.wrapT = THREE.RepeatWrapping
+  fabricMap.repeat.set(5, 5)
+  const jersey = material(shirt), trousers = material(pants)
+  for (const surface of [jersey, trousers]) {
+    surface.bumpMap = fabricMap
+    surface.bumpScale = .004
+    surface.roughness = .93
+  }
+  return { shirt: jersey, pants: trousers, trim: material(trim) }
 }
+type Kit = { shirt: THREE.MeshLambertMaterial | THREE.MeshStandardMaterial; pants: THREE.MeshLambertMaterial | THREE.MeshStandardMaterial; trim: THREE.MeshLambertMaterial | THREE.MeshStandardMaterial }
 
 const skin = [0x995c3e, 0xb87b56, 0x815237, 0xdca17a, 0xa77051].map(material)
 const soles = material(0xe8e7d4)
 const dark = material(0x192c36)
-const leather = material(0xb1bcae)
+const leather = material(0xe4e6dd)
 const batFace = material(0xe6bd78)
 const batGrip = material(0x293b48)
-const TORSO = new THREE.CylinderGeometry(.251, .186, .44, 8).scale(1, 1, .69)
-const HIP = new THREE.CylinderGeometry(.19, .19, .18, 8).scale(1, 1, .82)
-const HEAD = new THREE.SphereGeometry(.119, 10, 7).scale(.86, 1.12, .91)
-const HELMET = new THREE.SphereGeometry(.15, 12, 8, 0, TAU, 0, Math.PI * .64).scale(.89, .93, 1.04)
-const UPPER_ARM = new THREE.CylinderGeometry(.078, .055, .28, 7)
-const FOREARM = new THREE.CylinderGeometry(.057, .043, .246, 7)
+dark.roughness = .39
+leather.roughness = .68
+batFace.roughness = .47
+batGrip.roughness = .94
+for (const surface of skin) surface.roughness = .63
+const collar = new THREE.TorusGeometry(.072, .014, 5, 12).rotateX(Math.PI / 2)
+const BLADE = (() => {
+  const shape = new THREE.Shape()
+  shape.moveTo(-.045, -.215)
+  shape.lineTo(.045, -.215)
+  shape.quadraticCurveTo(.064, -.255, .064, -.29)
+  shape.lineTo(.061, -.813)
+  shape.quadraticCurveTo(0, -.846, -.061, -.813)
+  shape.lineTo(-.064, -.29)
+  shape.quadraticCurveTo(-.064, -.255, -.045, -.215)
+  return new THREE.ExtrudeGeometry(shape, { depth: .034, bevelEnabled: true, bevelSegments: 1,
+    steps: 1, bevelSize: .004, bevelThickness: .004, curveSegments: 3 }).translate(0, 0, -.017)
+})()
+const HANDLE = new THREE.CylinderGeometry(.019, .021, .25, 8)
+const SHOE = new THREE.CapsuleGeometry(.064, .13, 3, 6).rotateX(Math.PI / 2).scale(1, .61, 1)
+const TORSO = new THREE.CylinderGeometry(.251, .186, .44, 16).scale(1, 1, .69)
+const HIP = new THREE.CylinderGeometry(.19, .19, .18, 12).scale(1, 1, .82)
+const HEAD = new THREE.SphereGeometry(.119, 16, 12).scale(.86, 1.12, .91)
+const HELMET = new THREE.SphereGeometry(.15, 20, 12, 0, TAU, 0, Math.PI * .64).scale(.89, .93, 1.04)
+const FACIAL = new THREE.SphereGeometry(1, 8, 6)
+const UPPER_ARM = new THREE.CylinderGeometry(.078, .055, .28, 10)
+const FOREARM = new THREE.CylinderGeometry(.057, .043, .246, 10)
 const HAND = new THREE.SphereGeometry(.058, 8, 5).scale(.86, 1.16, .8)
-const THIGH = new THREE.CylinderGeometry(.103, .079, .37, 7)
-const SHIN = new THREE.CylinderGeometry(.078, .049, .34, 7)
+const THIGH = new THREE.CylinderGeometry(.103, .079, .37, 12)
+const SHIN = new THREE.CylinderGeometry(.078, .049, .34, 12)
 
 type Role = 'batter' | 'bowler' | 'fielder' | 'keeper' | 'umpire'
 type Rig = ReturnType<typeof athlete>
 
-export function athlete(scene: THREE.Scene, kit: ReturnType<typeof palette>, role: Role, id: number, shadow: THREE.MeshBasicMaterial) {
+export function athlete(scene: THREE.Scene, kit: Kit, role: Role, id: number, shadow: THREE.MeshBasicMaterial) {
   const base = group(scene)
   const footShadow = makeShadow(base, shadow, .83)
   footShadow.scale.y = .67
@@ -633,8 +807,14 @@ export function athlete(scene: THREE.Scene, kit: ReturnType<typeof palette>, rol
   mesh(shoulders, TORSO, kit.shirt, 0, .26, 0)
   box(shoulders, kit.trim, 0, .297, -.147, .309, .032, .018)
   box(shoulders, kit.trim, 0, .32, .146, .29, .026, .019)
+  mesh(shoulders, collar, kit.trim, 0, .474)
   const head = group(shoulders, 0, .58)
   mesh(head, HEAD, playerSkin)
+  mesh(head, FACIAL, playerSkin, 0, -.033, .106).scale.set(.018, .026, .025)
+  for (const side of [-1, 1]) {
+    mesh(head, FACIAL, playerSkin, side * .102, -.016, 0).scale.set(.017, .027, .017)
+    mesh(head, FACIAL, dark, side * .036, -.014, .097).scale.set(.009, .005, .006)
+  }
   mesh(head, HELMET, helmeted ? dark : kit.shirt, 0, .023)
   box(head, helmeted ? dark : kit.trim, 0, .017, .131, .205, .022, .128)
   if (helmeted) {
@@ -653,7 +833,7 @@ export function athlete(scene: THREE.Scene, kit: ReturnType<typeof palette>, rol
       for (const rib of [-.045, .045]) box(knee, soles, rib, -.159, .102, .018, .267, .013)
     }
     const ankle = group(knee, 0, -.34)
-    box(ankle, soles, 0, -.025, .045, .135, .079, .239)
+    mesh(ankle, SHOE, soles, 0, -.023, .045)
     return { hip, knee, ankle }
   })
 
@@ -669,10 +849,14 @@ export function athlete(scene: THREE.Scene, kit: ReturnType<typeof palette>, rol
 
   const bat = role === 'batter' ? group(shoulders, .2, .04, .12) : undefined
   if (bat) {
-    box(bat, batGrip, 0, -.107, 0, .037, .25, .04)
-    box(bat, batFace, 0, -.525, 0, .128, .620, .046)
+    mesh(bat, HANDLE, batGrip, 0, -.107)
+    mesh(bat, BLADE, batFace)
     box(bat, kit.trim, 0, -.341, .025, .095, .08, .007)
+    box(bat, dark, 0, -.41, .025, .083, .028, .007)
   }
+  batchRigidParts(shoulders)
+  batchRigidParts(head)
+  for (const leg of legs) batchRigidParts(leg.knee)
   return { base, body, shoulders, head, arms, legs, bat }
 }
 
@@ -695,18 +879,25 @@ function neutralPose(rig: Rig, time: number, stance = 0) {
   }
 }
 
-function runPose(rig: Rig, clock: number, strength: number) {
+function runPose(rig: Rig, clock: number, strength: number, motion?: PlayerMotion) {
   neutralPose(rig, clock)
-  const stride = Math.sin(clock * 16) * strength
-  rig.body.position.y += Math.abs(stride) * .063
-  rig.shoulders.rotation.x = strength * .14
-  rig.shoulders.rotation.y = stride * .17
+  const stride = motion?.swing ?? Math.sin(clock * 15) * strength
+  rig.body.position.y += motion?.lift ?? Math.abs(stride) * .042
+  rig.shoulders.rotation.x = motion?.lean ?? strength * .14
+  rig.shoulders.rotation.y = stride * .13
+  rig.body.rotation.z = motion?.bank ?? 0
+  rig.head.rotation.x = -rig.shoulders.rotation.x * .6
   for (let i = 0; i < 2; i++) {
     const swing = i === 0 ? stride : -stride
-    rig.legs[i].hip.rotation.x = swing * .68
-    rig.legs[i].knee.rotation.x = .13 + Math.max(0, -swing) * 1.1
-    rig.arms[i].shoulder.rotation.x = -swing * .62
+    rig.legs[i].hip.rotation.x = swing * .72
+    rig.legs[i].knee.rotation.x = .14 + Math.max(0, -swing) * 1.06
+    rig.legs[i].ankle.rotation.x = -.08 - Math.max(0, swing) * .23
+    rig.arms[i].shoulder.rotation.x = -swing * .66
     rig.arms[i].elbow.rotation.x = -.6 - strength * .36
+  }
+  if (rig.bat) {
+    rig.bat.position.set(.21, .11, .19)
+    rig.bat.rotation.set(.66, -.16, -.22)
   }
 }
 
@@ -716,16 +907,22 @@ function aimActor(rig: Rig, x: number, z: number) {
 }
 
 const DOWN = new THREE.Vector3(0, -1, 0)
+const GRIP_OFFSETS = [-.145, -.045] as const
+const gripOffset = new THREE.Vector3()
+const gripWrist = new THREE.Vector3()
+const gripReach = new THREE.Vector3()
+const gripPole = new THREE.Vector3()
+const gripLower = new THREE.Vector3()
+const gripInverse = new THREE.Quaternion()
 /** Keep both wrist targets reachable, instead of stretching forearms or detaching gloves. */
 function gripBat(rig: Rig) {
   if (!rig.bat) return
-  const offsets = [-.145, -.045]
   for (let pass = 0; pass < 8; pass++) {
     for (let i = 0; i < 2; i++) {
-      const offset = new THREE.Vector3(0, offsets[i], 0).applyQuaternion(rig.bat.quaternion)
-      const wrist = rig.bat.position.clone().add(offset)
+      const offset = gripOffset.set(0, GRIP_OFFSETS[i], 0).applyQuaternion(rig.bat.quaternion)
+      const wrist = gripWrist.copy(rig.bat.position).add(offset)
       const shoulder = rig.arms[i].shoulder.position
-      const reach = wrist.clone().sub(shoulder)
+      const reach = gripReach.copy(wrist).sub(shoulder)
       const distance = reach.length()
       if (distance > .505) rig.bat.position.addScaledVector(reach, .505 / distance - 1)
       else if (distance < .045) {
@@ -737,12 +934,12 @@ function gripBat(rig: Rig) {
   }
   for (let i = 0; i < 2; i++) {
     const arm = rig.arms[i]
-    const wrist = new THREE.Vector3(0, offsets[i], 0).applyQuaternion(rig.bat.quaternion).add(rig.bat.position)
-    const shoulder = arm.shoulder.position.clone()
-    const pole = shoulder.clone().add(new THREE.Vector3(i === 0 ? -.32 : .32, i === 0 ? -.18 : -.03, .30))
+    const wrist = gripWrist.set(0, GRIP_OFFSETS[i], 0).applyQuaternion(rig.bat.quaternion).add(rig.bat.position)
+    const shoulder = arm.shoulder.position
+    const pole = gripPole.set(i === 0 ? -.32 : .32, i === 0 ? -.18 : -.03, .30).add(shoulder)
     const elbow = elbowPosition(shoulder, wrist, pole)
-    arm.shoulder.quaternion.setFromUnitVectors(DOWN, elbow.clone().sub(shoulder).normalize())
-    const lower = wrist.clone().sub(elbow).normalize().applyQuaternion(arm.shoulder.quaternion.clone().invert())
+    arm.shoulder.quaternion.setFromUnitVectors(DOWN, gripReach.copy(elbow).sub(shoulder).normalize())
+    const lower = gripLower.copy(wrist).sub(elbow).normalize().applyQuaternion(gripInverse.copy(arm.shoulder.quaternion).invert())
     arm.elbow.quaternion.setFromUnitVectors(DOWN, lower)
   }
 }
@@ -847,17 +1044,30 @@ function bowlingPose(rig: Rig, time: number, phase: StadiumFrame['phase'], windu
     rig.base.position.set(.3, 0, PITCH_LENGTH + (spin ? 4 : 8) - run * (spin ? 5.04 : 9.04))
     runPose(rig, windup * 1.85, Math.sin(run * Math.PI) * .78 + run * .23)
     const arm = THREE.MathUtils.smoothstep(windup, .78, .999)
+    const gather = THREE.MathUtils.smoothstep(windup, .62, .82) * (1 - THREE.MathUtils.smoothstep(windup, .88, 1))
+    const plant = THREE.MathUtils.smoothstep(windup, .87, .999)
     rig.arms[1].shoulder.rotation.x = -arm * (spin ? 2.78 : 3.06)
     rig.arms[1].shoulder.rotation.z = .18 + arm * (spin ? .62 : .14)
-    rig.arms[0].shoulder.rotation.x = -arm * 1.1
+    rig.arms[0].shoulder.rotation.x = -gather * 1.85 - plant * .42
+    rig.arms[0].elbow.rotation.x = -.3 - gather * .58
+    rig.body.position.y += gather * (spin ? .045 : .10)
     rig.shoulders.rotation.x = arm * .13
+    rig.shoulders.rotation.y = (spin ? .40 : .25) * gather - plant * .11
+    rig.head.rotation.y = -rig.shoulders.rotation.y * .7
+    rig.legs[0].hip.rotation.x = THREE.MathUtils.lerp(rig.legs[0].hip.rotation.x, -.57, gather)
+    rig.legs[0].knee.rotation.x = THREE.MathUtils.lerp(rig.legs[0].knee.rotation.x, .84, gather)
+    rig.legs[1].hip.rotation.x = THREE.MathUtils.lerp(rig.legs[1].hip.rotation.x, -.19, plant)
+    rig.legs[1].knee.rotation.x = THREE.MathUtils.lerp(rig.legs[1].knee.rotation.x, .13, plant)
   } else if (phase === 'flight' && release < .54) {
     neutralPose(rig, time)
     rig.base.position.set(.3, 0, PITCH_LENGTH - 1.04 - Math.min(release, .54) * 2)
-    const follow = 1 - THREE.MathUtils.smoothstep(release, 0, .54)
+    const follow = 1 - THREE.MathUtils.smoothstep(release, 0, .42)
     rig.arms[1].shoulder.rotation.x = -follow * 2.92
     rig.arms[1].shoulder.rotation.z = .18 + follow * .17
     rig.shoulders.rotation.x = Math.sin(follow * Math.PI) * .41
+    rig.shoulders.rotation.y = -.11 - Math.sin(follow * Math.PI) * .23
+    rig.head.rotation.x = -rig.shoulders.rotation.x * .6
+    rig.arms[0].shoulder.rotation.x = .35 * (1 - follow)
     rig.legs[1].hip.rotation.x = follow * .36
   } else {
     neutralPose(rig, time)
@@ -915,10 +1125,16 @@ function wickets(scene: THREE.Scene) {
   return [0, PITCH_LENGTH].map((end) => {
     const assembly = group(scene, 0, .014, end)
     for (const x of [-.115, 0, .115]) {
-      mesh(assembly, posts, wood, x, .352)
+      const stump = mesh(assembly, posts, wood, x, .352)
+      stump.castShadow = true
+      stump.receiveShadow = true
       box(assembly, painted, x, .49, -.019, .024, .09, .007)
     }
-    return [-.0575, .0575].map((x) => mesh(assembly, bail, wood, x, .712))
+    return [-.0575, .0575].map((x) => {
+      const model = mesh(assembly, bail, wood, x, .712)
+      model.castShadow = true
+      return model
+    })
   })
 }
 
@@ -926,18 +1142,22 @@ export function createStadium(container: HTMLElement) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'low-power' })
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.06
+  renderer.toneMappingExposure = 1.02
+  renderer.shadowMap.type = THREE.PCFShadowMap
   renderer.domElement.setAttribute('aria-hidden', 'true')
   renderer.domElement.style.cssText = 'position:absolute;inset:0;display:block;width:100%;height:100%'
   container.append(renderer.domElement)
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(43, 16 / 9, .085, 310)
-  const setWeatherLight = makeSky(scene)
+  const lighting = makeSky(scene)
   const field = makeField(scene)
   const stands = new Map<Venue, THREE.Group>()
+  const qualityMaterials = new QualityMaterials()
   const crowdMotion = { time: { value: 0 }, energy: { value: 0 } }
   let activeStands: THREE.Group | undefined
   let activeVenue: Venue = 'suncrest'
+  let quality: GraphicsQuality = 'high'
+  let disposed = false
   let wind: number = WEATHER_LIGHT.clear.wind
   const pennants = [-.69, .79, 2.31, 3.89].map((angle, i) => {
     const position = polar(69.65, angle, 0)
@@ -949,11 +1169,18 @@ export function createStadium(container: HTMLElement) {
     return flag
   })
   function setConditions({ venue = 'suncrest', pitch = 'dry', weather = 'clear' }: StadiumConditions = {}) {
+    if (disposed) return
     activeVenue = venue
     let seating = stands.get(venue)
     if (!seating) {
       seating = new THREE.Group()
       addStands(seating, venue, crowdMotion)
+      qualityMaterials.apply(seating, GRAPHICS_QUALITY[quality].material === 'diffuse')
+      seating.traverse((object) => {
+        if (object instanceof THREE.InstancedMesh && object.userData.crowdCapacity) {
+          object.count = Math.round(object.userData.crowdCapacity * GRAPHICS_QUALITY[quality].crowdDensity)
+        }
+      })
       stands.set(venue, seating)
     }
     if (activeStands !== seating) {
@@ -968,7 +1195,7 @@ export function createStadium(container: HTMLElement) {
     field.outside.scale.setScalar(venue === 'harbor' ? .69 : 1)
     const [red, green, blue] = PITCH_COLOR[pitch]
     field.pitchSurface.color.setRGB(red, green, blue)
-    setWeatherLight(weather)
+    lighting.setWeather(weather)
     wind = WEATHER_LIGHT[weather].wind
   }
   setConditions()
@@ -987,10 +1214,20 @@ export function createStadium(container: HTMLElement) {
   umpire.base.position.set(-.57, 0, PITCH_LENGTH + 1.84)
   const squareUmpire = athlete(scene, umpireColors, 'umpire', 3, shadow)
   squareUmpire.base.position.set(-16, 0, .7)
+  for (const rig of [striker, nonStriker, bowler, keeper, umpire]) {
+    rig.base.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.material !== shadow) {
+        object.castShadow = true
+        object.receiveShadow = true
+      }
+    })
+  }
 
   const ballModel = group(scene)
-  mesh(ballModel, new THREE.SphereGeometry(.076, 12, 8), material(0xf4db94))
-  const seam = mesh(ballModel, new THREE.TorusGeometry(.074, .0035, 3, 14), material(0xb77946))
+  const ballLeather = material(0xf4f1e7)
+  ballLeather.roughness = .36
+  mesh(ballModel, new THREE.SphereGeometry(.076, 20, 12), ballLeather)
+  const seam = mesh(ballModel, new THREE.TorusGeometry(.074, .0028, 4, 32), material(0xa29b8b))
   seam.rotation.x = .7
   const ballShadow = makeShadow(scene, shadow, .26)
   const marker = mesh(scene, new THREE.RingGeometry(.137, .182, 40), new THREE.MeshBasicMaterial({
@@ -1001,7 +1238,20 @@ export function createStadium(container: HTMLElement) {
   const cameraPosition = new THREE.Vector3()
   const cameraTarget = new THREE.Vector3()
   const look = new THREE.Vector3()
-  const movingActors = new Map<Rig, THREE.Vector2>()
+  const dust = createGroundEffects(scene)
+  let pitchImpact: Delivery | undefined
+  let wicketDelivery: Delivery | undefined
+  let wicketAge = 0
+  let cachedPreset: FieldPreset | undefined
+  let cachedOutside: number | undefined
+  let cachedLayout: readonly Vec3[] | undefined
+  let presetPositions = fieldPositions()
+  const movingActors = new Map<Rig, { locomotion: PlayerMotion; fielding: ReturnType<typeof createFieldingMotion> }>()
+  for (const rig of [bowler, keeper, ...fielders]) movingActors.set(rig, { locomotion: createPlayerMotion(), fielding: createFieldingMotion() })
+  const strikerMotion = createPlayerMotion(0)
+  const partnerMotion = createPlayerMotion(Math.PI, Math.PI * .37)
+  let actorDelivery: Delivery | undefined
+  let resetActorMotion = true
   let mode: StadiumFrame['mode'] | undefined
   let time = 0
   let deadTime = 0
@@ -1056,71 +1306,99 @@ export function createStadium(container: HTMLElement) {
   let celebration: Delivery | undefined
   let confettiAge = 5
   const partyColors = [new THREE.Color(0xeaff53), new THREE.Color(0x5ae5e1), new THREE.Color(0xffa854)]
-  let pixelCap = 1.45
   let contextLost = false
 
   function resize() {
     const width = Math.max(1, container.clientWidth)
     const height = Math.max(1, container.clientHeight)
-    const bufferLimit = 1920
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelCap, bufferLimit / width))
+    if (disposed) return
+    renderer.setPixelRatio(renderPixelRatio(quality, width, window.devicePixelRatio))
     renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.fov = camera.aspect < 1.2 ? 52 : 43
     camera.updateProjectionMatrix()
   }
 
-  resize()
-  new ResizeObserver(resize).observe(container)
+  function setQuality(value: GraphicsQuality) {
+    if (disposed) return
+    quality = value
+    const budget = GRAPHICS_QUALITY[quality]
+    qualityMaterials.apply(scene, budget.material === 'diffuse')
+    for (const seating of stands.values()) qualityMaterials.apply(seating, budget.material === 'diffuse')
+    lighting.skyDetail.value = budget.skyDetail ? 1 : 0
+    renderer.shadowMap.enabled = budget.shadowSize > 0
+    lighting.sun.castShadow = budget.shadowSize > 0
+    if (budget.shadowSize === 0 || lighting.sun.shadow.mapSize.x !== budget.shadowSize) {
+      lighting.sun.shadow.map?.dispose()
+      lighting.sun.shadow.map = null
+      lighting.sun.shadow.mapPass?.dispose()
+      lighting.sun.shadow.mapPass = null
+      if (budget.shadowSize > 0) lighting.sun.shadow.mapSize.set(budget.shadowSize, budget.shadowSize)
+    }
+    for (const seating of stands.values()) seating.traverse((object) => {
+      if (object instanceof THREE.InstancedMesh && object.userData.crowdCapacity) {
+        object.count = Math.round(object.userData.crowdCapacity * budget.crowdDensity)
+      }
+    })
+    container.dataset.quality = quality
+    resize()
+  }
+  setQuality(quality)
+  const resizeObserver = new ResizeObserver(resize)
+  resizeObserver.observe(container)
   // Reserve the actual HUD height: wrapping and safe-area insets vary by device.
   const scoreboard = container.closest('.game')?.querySelector<HTMLElement>('#scoreboard')
-  if (scoreboard) new ResizeObserver(() => {
-    container.style.bottom = `${scoreboard.offsetHeight}px`
-  }).observe(scoreboard)
+  const scoreObserver = new ResizeObserver(() => {
+    if (scoreboard && !disposed) container.style.bottom = `${scoreboard.offsetHeight}px`
+  })
+  if (scoreboard) scoreObserver.observe(scoreboard)
 
   // The graphics quality trades resolution for frame rate on weaker devices.
   const canvas = renderer.domElement
-  canvas.addEventListener('webglcontextlost', (event) => {
+  const onContextLost = (event: Event) => {
     event.preventDefault()
     contextLost = true
-  })
-  canvas.addEventListener('webglcontextrestored', () => {
+  }
+  const onContextRestored = () => {
     contextLost = false
-    resize()
-  })
+    setQuality(quality)
+  }
+  canvas.addEventListener('webglcontextlost', onContextLost)
+  canvas.addEventListener('webglcontextrestored', onContextRestored)
 
   function moveFielder(rig: Rig, x: number, z: number, pace: number, delivery: Delivery | undefined, active: boolean, closeStance = 0) {
-    const prev = movingActors.get(rig)
-    const speed = prev ? Math.hypot(prev.x - x, prev.y - z) / Math.max(.005, pace) : 0
+    const actor = movingActors.get(rig)!
+    const clock = (delivery?.tick ?? 0) * DT
+    const movement = samplePlayerMotion(actor.locomotion, x, z, clock, resetActorMotion || !delivery)
     rig.base.position.set(x, 0, z)
-    if (prev) prev.set(x, z)
-    else movingActors.set(rig, new THREE.Vector2(x, z))
     const receiving = active && delivery && ((delivery.action === 'pickup' || delivery.action === 'hold') || delivery.action === 'return')
-    if (active && speed > .6 && !receiving) runPose(rig, (delivery?.tick ?? 0) * DT, Math.min(1, speed / 5))
-    else neutralPose(rig, time + x * .14, receiving ? .25 : closeStance)
-    if (active && delivery) aimActor(rig, delivery.ball.x, delivery.ball.z)
+    const action = sampleFieldingMotion(actor.fielding, receiving ? delivery.action : 'idle', clock, resetActorMotion || !delivery)
+    if (movement.amount > .025 && !receiving) runPose(rig, clock, movement.amount, movement)
+    else neutralPose(rig, time + x * .14, receiving ? action.crouch : closeStance)
+    if (movement.speed > .2 && !receiving) rig.base.rotation.y = movement.yaw
+    else if (active && delivery) aimActor(rig, delivery.ball.x, delivery.ball.z)
     else aimActor(rig, 0, 0)
     if (receiving) {
-      if (delivery.action === 'return') {
-        aimActor(rig, 0, 0)
-        const throwCycle = 1 - Math.min(1, Math.hypot(delivery.ball.x - x, delivery.ball.z - z) / 9)
-        rig.body.position.y += .25
-        rig.arms[1].shoulder.rotation.x = -2.25 * throwCycle
-        rig.arms[0].shoulder.rotation.x = -.8 * throwCycle
-      } else {
-        rig.shoulders.rotation.x = .55
-        rig.arms[0].shoulder.rotation.x = -.7
-        rig.arms[1].shoulder.rotation.x = -.74
-      }
+      if (delivery.action === 'return' || delivery.action === 'hold') aimActor(rig, 0, delivery.throwTarget === 'bowler' ? PITCH_LENGTH : KEEPER.z)
+      rig.shoulders.rotation.x = action.bend
+      rig.shoulders.rotation.y = action.twist
+      rig.head.rotation.x = -action.bend * .55
+      rig.arms[1].shoulder.rotation.x = action.throwArm
+      rig.arms[0].shoulder.rotation.x = action.guideArm
+      rig.arms[1].elbow.rotation.x = -.48
+      rig.arms[0].elbow.rotation.x = -.23
     }
   }
 
   function render(frame: StadiumFrame, dt: number) {
+    if (disposed || contextLost) return
     const reducedMotion = frame.reducedMotion ?? motionPreference
+    dt = Math.min(Math.max(dt, 0), .1)
     time += dt
+    lighting.skyTime.value = reducedMotion ? 0 : time
     pennants.forEach((flag, i) => {
-      flag.rotation.y = .64 + Math.sin(time * (2.1 + wind) + i * 1.9) * (.18 + wind * .065)
-      flag.rotation.x = Math.sin(time * 4.3 + i) * wind * .045
+      flag.rotation.y = .64 + (reducedMotion ? 0 : Math.sin(time * (2.1 + wind) + i * 1.9) * (.18 + wind * .065))
+      flag.rotation.x = reducedMotion ? 0 : Math.sin(time * 4.3 + i) * wind * .045
     })
     const isHome = frame.mode === 'home'
     if (isHome && !reducedMotion) {
@@ -1144,6 +1422,8 @@ export function createStadium(container: HTMLElement) {
     const isBowling = frame.mode === 'bowl'
     const phase = frame.phase
     const delivery = phase !== 'ready' && phase !== 'windup' ? frame.delivery : undefined
+    resetActorMotion = delivery !== actorDelivery
+    actorDelivery = delivery
     if (delivery !== boundaryDelivery) {
       boundaryDelivery = delivery
       boundaryFlight = null
@@ -1158,6 +1438,11 @@ export function createStadium(container: HTMLElement) {
       }
     }
     const currentBall = boundaryFlight?.ball ?? delivery?.ball
+    if (delivery?.pitchPoint && pitchImpact !== delivery) {
+      pitchImpact = delivery
+      if (!reducedMotion) dust.emit(delivery.pitchPoint, GRAPHICS_QUALITY[quality].particles)
+    }
+    dust.update(dt, !reducedMotion && quality !== 'low')
     const visualTick = (delivery?.tick ?? 0) + (boundaryFlight?.tick ?? 0)
     const newMode = frame.mode !== mode
     deadTime = phase === 'dead' ? deadTime + dt : 0
@@ -1168,12 +1453,14 @@ export function createStadium(container: HTMLElement) {
       confettiAge = 0
     }
     confettiAge += dt
-    confetti.visible = confettiAge < 3.8
+    confetti.visible = !reducedMotion && quality !== 'low' && confettiAge < 3.8
     if (confetti.visible) {
       for (let i = 0; i < 96; i++) {
         const t = confettiAge
-        confettiPositions.set([(noise(i + 19) - .5) * (4 + t * 4), 2 + noise(i + 61) * 3 + t * 2 - t * t * .8,
-          .5 + (noise(i + 113) - .5) * (4 + t * 3)], i * 3)
+        const offset = i * 3
+        confettiPositions[offset] = (noise(i + 19) - .5) * (4 + t * 4)
+        confettiPositions[offset + 1] = 2 + noise(i + 61) * 3 + t * 2 - t * t * .8
+        confettiPositions[offset + 2] = .5 + (noise(i + 113) - .5) * (4 + t * 3)
         partyColors[i % partyColors.length].toArray(confettiColors, i * 3)
       }
       confettiMaterial.opacity = Math.min(1, (3.8 - confettiAge) * 2)
@@ -1198,25 +1485,24 @@ export function createStadium(container: HTMLElement) {
     const running = delivery?.runnerProgress ?? 0
     const reverse = ((delivery?.completedRuns ?? 0) % 2) !== 0
     const progress = reverse ? 1 - running : running
-    const manual = delivery?.manualRunning
     const strideLength = PITCH_LENGTH - 2.44
-    const runnerPositions = manual ? delivery.runnerPositions : undefined
+    const runnerPositions = delivery?.runnerPositions
     striker.base.position.set(.57, 0, runnerPositions ? strikerRootZ(runnerPositions[0], running, delivery?.completedRuns ?? 0) : .08 + progress * strideLength)
     nonStriker.base.position.set(-.84, 0, runnerPositions?.[1] ?? PITCH_LENGTH - 1.22 - progress * strideLength)
+    const runnerClock = (delivery?.tick ?? 0) * DT
+    const strikerGait = samplePlayerMotion(strikerMotion, .57, runnerPositions?.[0] ?? 1.22, runnerClock, resetActorMotion || !delivery)
+    const partnerGait = samplePlayerMotion(partnerMotion, -.84, runnerPositions?.[1] ?? PITCH_LENGTH - 1.22, runnerClock, resetActorMotion || !delivery)
     const swing = delivery?.swingTick == null ? frame.practiceSwing?.age : (delivery.tick - delivery.swingTick) * DT
-    const awayFromGuard = running > 0 || (delivery?.completedRuns ?? 0) > 0
+    const awayFromGuard = running > 0 || (delivery?.partnerProgress ?? 0) > 0 || (delivery?.completedRuns ?? 0) > 0
     if (awayFromGuard) {
-      const clock = (delivery?.tick ?? 0) * DT
-      if (delivery?.runnersMoving) {
-        runPose(striker, clock, 1)
-        runPose(nonStriker, clock, 1)
-      } else {
-        neutralPose(striker, time)
-        neutralPose(nonStriker, time)
-      }
-      const backwards = reverse !== (delivery?.runnersReturning ?? false)
-      striker.base.rotation.y = backwards ? Math.PI : 0
-      nonStriker.base.rotation.y = backwards ? 0 : Math.PI
+      // Each grounded batter settles independently while the partner finishes.
+      // Shared running intent must never substitute for individual movement.
+      if (strikerGait.amount > .025 && phase !== 'dead') runPose(striker, runnerClock, strikerGait.amount, strikerGait)
+      else neutralPose(striker, time, .015)
+      if (partnerGait.amount > .025 && phase !== 'dead') runPose(nonStriker, runnerClock, partnerGait.amount, partnerGait)
+      else neutralPose(nonStriker, time, .015)
+      striker.base.rotation.y = strikerGait.yaw
+      nonStriker.base.rotation.y = partnerGait.yaw
     } else {
       batterPose(striker, time, swing, frame.practiceSwing?.shot ?? frame.shot, frame.shotAngle, delivery?.batImpact ?? delivery?.projectedContact, delivery ? smooth((delivery.tick - delivery.contactTick + 26) / 23) : 0)
       neutralPose(nonStriker, time, .025)
@@ -1248,7 +1534,12 @@ export function createStadium(container: HTMLElement) {
     if (delivery?.outcome?.reason === 'collected' || approachingKeeper || breaking) {
       receivePose(keeper, delivery, time)
     }
-    const presetPositions = fieldPositions(frame.fieldPreset, frame.maxOutside, frame.fieldLayout)
+    if (frame.fieldPreset !== cachedPreset || frame.maxOutside !== cachedOutside || frame.fieldLayout !== cachedLayout) {
+      cachedPreset = frame.fieldPreset
+      cachedOutside = frame.maxOutside
+      cachedLayout = frame.fieldLayout
+      presetPositions = fieldPositions(cachedPreset, cachedOutside, cachedLayout)
+    }
     fielders.forEach((rig, index) => {
       const spot = (phase === 'ready' || phase === 'dead') && isBowling && !frame.replay ? presetPositions[index] : delivery?.fielders[index] ?? presetPositions[index]
       moveFielder(rig, spot.x, spot.z, dt, delivery, delivery?.activeFielder === index, .035)
@@ -1259,11 +1550,15 @@ export function createStadium(container: HTMLElement) {
     aimActor(squareUmpire, 0, 0)
 
     const broken = delivery?.wicketBroken || delivery?.outcome?.reason === 'bowled' || delivery?.outcome?.reason === 'run-out'
+    if (delivery !== wicketDelivery) { wicketDelivery = delivery; wicketAge = 0 }
+    if (broken) wicketAge += dt
     bails.forEach((pair, end) => pair.forEach((bail, index) => {
       const brokenHere = broken && end === (delivery?.throwTarget === 'bowler' && delivery.wicketBroken ? 1 : 0)
-      bail.position.y = brokenHere ? .04 : .712
-      bail.position.z = brokenHere ? .22 + .17 * index : 0
-      bail.rotation.y = brokenHere ? .77 * (index === 0 ? 1 : -1) : 0
+      const t = Math.min(reducedMotion ? 1 : wicketAge, 1)
+      bail.position.y = brokenHere ? Math.max(.035, .712 + t * 1.8 - t * t * 4.9) : .712
+      bail.position.z = brokenHere ? (.55 + .27 * index) * Math.min(t, .61) : 0
+      bail.rotation.y = brokenHere ? t * (index === 0 ? 5 : -4) : 0
+      bail.rotation.x = brokenHere ? t * 6 : 0
     }))
     const held = phase === 'windup' || (isBowling && phase === 'ready')
     ballModel.visible = currentBall !== undefined || held
@@ -1279,11 +1574,17 @@ export function createStadium(container: HTMLElement) {
       if (trailDelivery !== delivery) {
         trailDelivery = delivery
         trailTick = -1
-        for (let i = 0; i < 24; i++) trailPositions.set([x, y, z], i * 3)
+        for (let i = 0; i < 24; i++) {
+          trailPositions[i * 3] = x
+          trailPositions[i * 3 + 1] = y
+          trailPositions[i * 3 + 2] = z
+        }
       }
       if (trailTick !== visualTick) {
         trailPositions.copyWithin(3, 0, trailPositions.length - 3)
-        trailPositions.set([x, y, z])
+        trailPositions[0] = x
+        trailPositions[1] = y
+        trailPositions[2] = z
         trailTick = visualTick
         trailGeometry.attributes.position.needsUpdate = true
       }
@@ -1334,7 +1635,7 @@ export function createStadium(container: HTMLElement) {
       cameraTarget.y = THREE.MathUtils.lerp(cameraTarget.y, Math.max(.8, currentBall.y * .66), follow * .84)
       cameraTarget.z = THREE.MathUtils.lerp(cameraTarget.z, currentBall.z, follow * .89)
     }
-    if (!isHome && !isBowling && phase === 'dead' && frame.signal && !boundaryFlight?.presenting) {
+    if (!reducedMotion && !isHome && !isBowling && phase === 'dead' && frame.signal && !boundaryFlight?.presenting) {
       const decision = THREE.MathUtils.smoothstep(deadTime, .69, 1.7)
       cameraPosition.z += decision * 5.3
       cameraTarget.z += decision * 5
@@ -1358,13 +1659,54 @@ export function createStadium(container: HTMLElement) {
   return {
     render,
     setConditions,
-    /** The graphics quality, trading resolution for frame rate. */
-    setQuality(quality: 'high' | 'medium' | 'low') {
-      pixelCap = quality === 'low' ? 0.7 : quality === 'medium' ? 1 : 1.45
-      resize()
+    setQuality,
+    /** Release observers, cached venues, textures, buffers, and WebGL programs. */
+    dispose() {
+      if (disposed) return
+      disposed = true
+      resizeObserver.disconnect()
+      scoreObserver.disconnect()
+      canvas.removeEventListener('webglcontextlost', onContextLost)
+      canvas.removeEventListener('webglcontextrestored', onContextRestored)
+      const geometries = new Set<THREE.BufferGeometry>()
+      const surfaces = new Set<THREE.Material>()
+      const textures = new Set<THREE.Texture>()
+      const visited = new Set<THREE.Object3D>()
+      for (const root of [scene, ...stands.values()]) root.traverse((object) => {
+        if (visited.has(object)) return
+        visited.add(object)
+        if (!(object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points)) return
+        geometries.add(object.geometry)
+        const materials = Array.isArray(object.material) ? object.material : [object.material]
+        for (const surface of materials) surfaces.add(surface)
+        if (object instanceof THREE.InstancedMesh) object.dispose()
+      })
+      qualityMaterials.collect(surfaces)
+      for (const surface of surfaces) {
+        for (const value of Object.values(surface)) if (value instanceof THREE.Texture) textures.add(value)
+        surface.dispose()
+      }
+      textures.forEach((texture) => texture.dispose())
+      geometries.forEach((geometry) => geometry.dispose())
+      lighting.sun.shadow.dispose()
+      stands.clear()
+      qualityMaterials.clear()
+      scene.clear()
+      renderer.dispose()
+      // Three retains a 1x1 fallback shadow sampler outside scene resources.
+      // Release the discarded canvas context too, including engine-owned caches.
+      if (renderer.getContext().getExtension('WEBGL_lose_context')) renderer.forceContextLoss()
+      canvas.remove()
     },
     boundaryPlaying: () => boundaryFlight?.presenting ?? false,
     info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
+      quality, shadows: renderer.shadowMap.enabled, shadowSize: lighting.sun.castShadow ? lighting.sun.shadow.mapSize.x : 0,
+      materialMode: GRAPHICS_QUALITY[quality].material, materialVariants: qualityMaterials.count,
+      skyDetail: lighting.skyDetail.value > .5,
+      pixelRatio: renderer.getPixelRatio(), width: canvas.width, height: canvas.height,
+      geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
+      programs: renderer.info.programs?.length ?? 0, contextLost, disposed,
+      contextReleased: disposed && renderer.getContext().isContextLost(),
       boundary: boundaryFlight ? { ball: { ...boundaryFlight.ball }, tick: boundaryFlight.tick, landed: boundaryFlight.landedAt !== null, settled: boundaryFlight.settled } : null }),
   }
 }

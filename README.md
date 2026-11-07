@@ -2,6 +2,8 @@
 
 A 3D browser cricket game with Solo matches against the Ridgebacks, Training Nets and local online 1v1. Play at Suncrest Oval, Harbor Reach or Citadel Pavilion.
 
+The November visual milestone adds a navy-and-gold broadcast interface, a new sports typography treatment, live setup previews, physically based daytime lighting, player shadows, textured pitch wear, and independently coordinated running and fielding animation. **Pause → Settings → Graphics** offers three budgets: High and Medium include directional shadows; Low reduces resolution, crowd and shader work. See the [milestone implementation and verification report](docs/visual-milestone.md) for screenshots, measured costs, preserved H1–H6 regressions and remaining asset/device limitations.
+
 ## Run locally
 
 Use Node.js 22.18 or newer.
@@ -68,10 +70,17 @@ npm run test:hud
 npm run test:runout
 npm run test:fielding
 npm run test:batting
+npm run test:retreat
+npm run test:graphics
+npm run test:presentation
+npm run test:milestone
+npm run test:match-presentation
 npm run spike:authority
 ```
 
 The browser smoke test runs against the production bundle using Chromium. It supports `CCL_CHROME_PATH` for an installed Chrome executable, `CCL_SOFTWARE_GPU=1` for SwiftShader, and `CCL_QA_DIR` for optional screenshots. Enter `window.cclTelemetry()` in DevTools to inspect local performance counters. Add `?seed=41` to the game URL to reproduce a delivery sequence.
+
+Graphics diagnostics additionally expose draw calls, triangles, render dimensions, shadow budgets, resource counts and CPU simulation/presentation/render submission timings. CPU submission timing is not GPU frame time. The new graphics, presentation and milestone browser scripts save their evidence under `docs/visual-evidence/` by default. `test:milestone` uses the current production build; run the build first.
 
 Use `?play=training`, `?play=solo` or `?play=six` to enter directly. `test:swipe` uses real browser mouse movement and touch events to verify a drive, a lofted six, early feedback, replay and automatic next ball. The stadium title screen runs a separate demonstration delivery; it never writes to a match score or career. Match presentation includes crowd motion and ambience, bat impact and cheering, ball trails, boundary celebration and a closer batting camera. Sound can be muted; decorative camera effects respect reduced motion.
 

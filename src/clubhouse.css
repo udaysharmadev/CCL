@@ -1,0 +1,105 @@
+/* Clubhouse: grass greens, cricket whites and a flash of match-day lime. */
+:root {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #f4f2e9;
+  background: #062e26;
+  --ink: #062e26;
+  --paper: #f4f2e9;
+  --lime: #cefa69;
+  --yellow: #cefa69;
+  --gold: #d8c68f;
+  --mint: #a5dbb8;
+  --muted: #a5beb0;
+  --dim: #a5beb0;
+  --rule: #b8dab329;
+  --glass: #082f28f2;
+  --display: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+}
+button, input, select { -webkit-tap-highlight-color: transparent; }
+button:disabled { cursor: default; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--lime); outline-offset: 4px; }
+.primary, .secondary, .utility, .choice { border-radius: 9px; }
+.primary { background: var(--lime); color: var(--ink); border-color: transparent; }
+.primary:hover:not(:disabled) { background: #ddff98; }
+.secondary, .choice { background: #153e32; border-color: #b8dab333; }
+.secondary:hover:not(:disabled), .choice:hover:not(:disabled) { background: #24513e; border-color: #cefa6977; }
+.choice[aria-pressed="true"] { background: #31532b; border-color: var(--lime); color: var(--lime); }
+.utility { background: #0d382d; }
+.utility:hover, .utility[aria-pressed="false"] { background: #244b39; }
+.eyebrow { color: var(--lime); }
+select, .online-field input, .invite-link { color: var(--paper); background: #0b332a; border: 1px solid #b8dab339; border-radius: 8px; }
+select { cursor: pointer; }
+select option { background: #0b332a; color: var(--paper); }
+
+/* A consistent match centre for every menu and in-game panel. */
+.overlay { width: min(520px, calc(100vw - 28px)); max-height: calc(100dvh - 32px); padding: 30px; border: 1px solid #b8dab340; border-radius: 18px; background: radial-gradient(ellipse at 100% 0, #29533b55, transparent 65%), #0b332a; box-shadow: 0 28px 100px #001b16aa; scrollbar-color: #527851 #0b332a; }
+.overlay::backdrop { background: #001c16bd; backdrop-filter: blur(8px); }
+.overlay h2 { font-family: var(--display); font-size: clamp(30px, 4vw, 43px); font-weight: 700; line-height: 1.06; text-transform: none; letter-spacing: -.025em; margin: 12px 0; }
+.overlay > .eyebrow { font-size: 9px; letter-spacing: .18em; }
+.overlay-text { color: #afc8b8; font-size: 13px; line-height: 1.7; }
+.overlay-actions { gap: 10px; }
+.overlay-actions button, .setup-actions button { min-height: 48px; font-size: 14px; }
+.setup-form label, .online-field { color: #b9cfc0; font-size: 12px; }
+.setup-form select { padding: 11px 12px; font-size: 13px; min-width: 0; width: 100%; }
+.settings-note { font-size: 11px; color: #9bb5a4; }
+.overlay-scores > div { background: #c8e9ad0a; border-color: var(--lime); border-radius: 8px; }
+.overlay[data-presentation="result"] h2 { color: var(--lime); }
+.pause-tools { gap: 8px; }
+.guide { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; counter-reset: guide; }
+#how-to-play-dialog { width: min(800px, calc(100vw - 28px)); }
+.guide section { padding: 18px; border: 1px solid var(--rule); border-radius: 11px; background: #ffffff03; counter-increment: guide; }
+.guide h3 { margin: 0 0 9px; color: var(--paper); font-size: 15px; font-weight: 650; }
+.guide h3::before { content: '0' counter(guide); display: inline-block; margin-right: 12px; color: var(--lime); font: 11px var(--display); }
+.guide p { color: #a9c3b2; font: 12px/1.7 "Segoe UI", sans-serif; }
+#settings-dialog .setup-form { gap: 0; border: 1px solid var(--rule); border-radius: 11px; padding: 0 18px; background: #ffffff03; }
+#settings-dialog .setup-form label { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; min-height: 69px; padding: 14px 0; gap: 15px; color: var(--paper); font-size: 13px; }
+#settings-dialog .setup-form label:last-child { border: 0; }
+#settings-dialog .setting-description { display: block; margin-top: 5px; font-size: 10px; color: #98b4a2; line-height: 1.5; }
+#settings-dialog input[type="checkbox"] { appearance: none; width: 38px; height: 22px; margin: 0; border-radius: 20px; border: 1px solid #789d8244; background: #547563; cursor: pointer; position: relative; transition: background .15s; }
+#settings-dialog input[type="checkbox"]::before { content: ''; position: absolute; width: 14px; height: 14px; top: 3px; left: 3px; border-radius: 50%; background: #f4f2e9; transition: transform .15s; }
+#settings-dialog input[type="checkbox"]:checked { background: var(--lime); border-color: var(--lime); }
+#settings-dialog input[type="checkbox"]:checked::before { background: var(--ink); transform: translateX(16px); }
+#settings-dialog select { max-width: 140px; }
+.online-hero { display: flex; align-items: center; gap: 15px; margin: 22px 0 18px; padding: 20px; border: 1px solid #cefa6940; border-radius: 12px; background: #cefa6909; }
+.online-hero > span { font: 700 34px/1 var(--display); color: var(--lime); letter-spacing: -.06em; }
+.online-hero p { color: var(--paper); font-size: 13px; font-weight: 600; }
+.online-hero small { display: block; margin-top: 5px; color: #a1bea9; font-size: 11px; line-height: 1.5; }
+#online-dialog .online-section { display: grid; gap: 10px; margin: 0; padding: 18px 0 0; border: 0; border-top: 1px solid var(--rule); min-width: 0; }
+.online-section legend { padding-right: 12px; color: #8eb398; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .13em; }
+.online-room-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.online-room-actions button { justify-content: center; text-align: center; font-size: 12px; padding: 9px 12px; }
+.online-field input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; }
+#join-code { font-family: var(--display); letter-spacing: .18em; text-transform: uppercase; }
+#close-online { justify-content: center; margin-top: 6px; }
+
+/* Keep established gameplay geometry; carry the green palette into its HUD. */
+.scoreboard { background: linear-gradient(105deg, #164332, #082d25 60%, #1c4632); border-top-color: var(--lime); }
+.team-code { background: #2c593c; color: #e9f1bf; }
+.broadcast-heading { color: #bcd4bf; border-color: var(--rule); }
+.broadcast-heading i { background: var(--lime); }
+.batter-strip { border-color: var(--rule); }
+.batter-strip b { color: #bed4c4; }
+.batter-strip .on-strike b { color: var(--lime); }
+.batter-strip .on-strike::before { background: var(--lime); }
+.score-stats, .score-footer { color: #c8d9cc; }
+.ribbon::before, #score-stats::before, #last-ball { color: #99b7a6; }
+.ribbon span { background: #315643; }
+.ribbon .boundary { color: #153925; background: var(--lime); }
+.ribbon .pending-ball { background: transparent; border-color: #acc8a644; color: #94b49d; }
+.bat-tools button, .game:not([data-view="home"]) .top-controls .utility, .duo-controls, .bowl-controls, .fielding-controls { background: #092f27ed; border-color: #c8deaf3b; }
+.bat-tools button[aria-pressed="true"] { background: var(--lime); color: var(--ink); border-color: var(--lime); }
+.field-map-button { background: #0a3028eb; border-color: #c8deaf3b; }
+.callout { background: #092f27ed; border-color: var(--lime); }
+.scorecard-dialog { width: min(1040px, 96vw); background: #0b332a; padding: 0 24px 24px; }
+.scorecard-header { background: #0b332a; border-color: var(--rule); }
+.scorecard-header h2 { font-size: 25px; }
+.innings-tabs button, .over-row { background: #153f32; border-color: var(--rule); color: #c5d8c7; }
+.innings-tabs button[aria-pressed="true"] { color: var(--lime); border-color: #cefa6980; background: #294c32; }
+.scorecard-hero { border-color: var(--lime); }
+.card-table thead { background: #1c4736; }
+.score-section h3, .scorecard-team, .scorecard-figures span, .card-table thead th, .extras-line { color: #b0c8b7; }
+.scorecard-context { color: #bce0b8; }
+
+
+@media (max-width: 760px) { .guide { grid-template-columns: 1fr; } }
+@media (max-width: 500px) { .overlay { padding: 20px 16px; } #settings-dialog select { max-width: 115px; } .scorecard-dialog { padding: 0 12px 18px; } }

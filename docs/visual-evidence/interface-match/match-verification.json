@@ -1,0 +1,122 @@
+{
+  "browser": "156.0.8078.81",
+  "quality": "low",
+  "softwareGPU": true,
+  "timingMode": "virtual clock; telemetry durations are not hardware performance measurements",
+  "gameplayViewport": {
+    "width": 800,
+    "height": 450
+  },
+  "evidenceViewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "seed": 41,
+  "battingAttempts": 12,
+  "bowlingAttempts": 12,
+  "first": {
+    "runs": 64,
+    "wickets": 0,
+    "legalBalls": 12
+  },
+  "second": {
+    "runs": 20,
+    "wickets": 3,
+    "legalBalls": 12
+  },
+  "result": "Suncrest wins",
+  "initialWallet": {
+    "coins": 0,
+    "xp": 0
+  },
+  "wallet": {
+    "coins": 30,
+    "xp": 80
+  },
+  "replayVerified": true,
+  "rewardsPersisted": true,
+  "errors": [],
+  "warnings": [],
+  "telemetry": {
+    "marks": {
+      "firstFrame": 5,
+      "firstPlay": 5,
+      "firstRelease": 3024,
+      "inningsComplete": 89584,
+      "matchComplete": 178565
+    },
+    "counts": {
+      "firstFrame": 1,
+      "firstPlay": 1,
+      "firstRelease": 24,
+      "inningsComplete": 2,
+      "matchComplete": 1
+    },
+    "transferBytes": 0,
+    "frameMs": {
+      "count": 1800,
+      "p50": 16,
+      "p95": 16,
+      "p99": 16
+    },
+    "inputToFrameMs": {
+      "count": 12,
+      "p50": 7,
+      "p95": 15,
+      "p99": 15
+    },
+    "swingToContactMs": {
+      "count": 12,
+      "p50": 66.7,
+      "p95": 66.7,
+      "p99": 66.7
+    },
+    "simulationMs": {
+      "count": 1800,
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+    },
+    "presentationMs": {
+      "count": 1800,
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+    },
+    "renderMs": {
+      "count": 1800,
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+    },
+    "graphics": {
+      "calls": 15,
+      "triangles": 57384,
+      "quality": "low",
+      "shadows": false,
+      "shadowSize": 0,
+      "materialMode": "diffuse",
+      "materialVariants": 37,
+      "skyDetail": false,
+      "pixelRatio": 0.75,
+      "width": 960,
+      "height": 443,
+      "geometries": 102,
+      "textures": 6,
+      "programs": 12,
+      "contextLost": false,
+      "disposed": false,
+      "contextReleased": false,
+      "boundary": {
+        "ball": {
+          "x": -39.24831424683559,
+          "y": 0.9394429579839465,
+          "z": 64.94583298010207
+        },
+        "tick": 11,
+        "landed": true,
+        "settled": false
+      }
+    }
+  }
+}

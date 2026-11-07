@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b211e">
+  <meta name="theme-color" content="#062e26">
   <meta name="description" content="Play 3D arcade cricket across three grounds in Crazy Cricket League.">
   <link rel="icon" type="image/svg+xml" href="./mark.svg">
   <title>Crazy Cricket League</title>
@@ -18,6 +18,8 @@
         <img src="./mark.svg" alt="" width="41" height="41">
         <span>CRAZY CRICKET <strong>LEAGUE</strong></span>
       </button>
+      <div class="player-profile"><span class="player-emblem" aria-hidden="true">S</span><span><b>SUNCREST XI</b><small>LOCAL PLAYER</small></span></div>
+      <nav class="home-utilities" aria-label="Game information"><button id="how-to-play" type="button" aria-label="How to play" disabled><span aria-hidden="true">?</span> How to play</button><button id="settings-button" type="button" aria-label="Settings" disabled><span aria-hidden="true">⚙</span> Settings</button></nav>
       <div class="top-controls">
         <div class="wallet" aria-label="Local career totals"><span><i class="coin" aria-hidden="true"></i><b id="coins">0</b></span><span><b id="xp">0</b> XP</span></div>
         <button id="sound-button" class="utility" type="button" aria-pressed="true">Sound</button>
@@ -32,28 +34,31 @@
     </header>
 
     <section id="home" class="home" aria-labelledby="title">
-      <p class="eyebrow"><span></span> THE CROWD IS WAITING</p>
-      <h1 id="title">CRAZY<br>CRICKET<br><em>LEAGUE</em></h1>
-      <p class="tagline">One swipe. All the glory.</p>
-      <div class="home-actions">
-        <button id="solo-button" class="primary" type="button" aria-label="Play Solo Arcade" disabled><span>PLAY CRICKET</span><span aria-hidden="true">▶</span></button>
-        <button id="training-button" class="secondary" type="button" aria-label="Training Nets" disabled><span>Practice in the nets</span><span aria-hidden="true">→</span></button>
-        <div class="home-links">
-          <button id="setup-button" class="utility" type="button" disabled>Match setup</button>
-          <button id="lineup-button" class="utility" type="button" disabled>Dressing room</button>
-          <button id="six-button" class="utility" type="button" disabled>Longest Six</button>
-          <button id="online-button" class="utility" type="button" disabled>Online</button>
-          <button id="how-to-play" class="utility" type="button" disabled>How to play</button>
-          <button id="settings-button" class="utility" type="button" disabled>Settings</button>
-        </div>
+      <div class="lobby-heading"><h1 id="title"><span aria-hidden="true">▰</span> PLAY</h1><span>CHOOSE YOUR GAME</span><b>CRAZY CRICKET LEAGUE</b></div>
+      <div class="lobby-grid">
+        <section class="quick-play-panel" aria-label="Quick play">
+          <div class="quick-play-heading"><span class="game-label">SOLO ARCADE</span><h2>THIS IS<br><em>YOUR INNINGS.</em></h2></div>
+          <span class="hero-watermark" aria-hidden="true">CCL</span>
+          <img class="cricket-graphic" src="./cricket-hero.svg" alt="Cricketer playing a powerful drive in a floodlit stadium illustration" width="760" height="650" fetchpriority="high">
+          <div class="quick-play-bottom"><div class="quick-matchup"><span>SUNCREST</span><i>VS</i><span>RIDGEBACKS</span></div><p id="home-match-details">2 OVERS · SUNCREST OVAL</p><button id="solo-button" class="primary" type="button" aria-label="Play Solo Arcade" disabled><span>QUICK PLAY</span><span aria-hidden="true">▶</span></button></div>
+        </section>
+        <section class="mode-section" aria-label="Game modes">
+          <div class="home-links">
+            <button id="setup-button" class="mode-link" type="button" aria-label="Match setup" disabled><span class="mode-tag">YOUR MATCH. YOUR RULES.</span><span class="mode-copy"><b>MATCH<br>SETUP</b><small>Ground · overs · conditions</small></span><i aria-hidden="true">↗</i></button>
+            <button id="lineup-button" class="mode-link" type="button" aria-label="Dressing room" disabled><span class="mode-tag">SQUAD MANAGEMENT</span><span class="mode-copy"><b>DRESSING<br>ROOM</b><small>Select your playing XI</small></span><i aria-hidden="true">↗</i></button>
+            <button id="six-button" class="mode-link" type="button" aria-label="Longest Six" disabled><span class="mode-tag">POWER HIT CHALLENGE</span><span class="mode-copy"><b>LONGEST<br>SIX</b><small>5 balls. Clear the ropes.</small></span><i aria-hidden="true">↗</i></button>
+            <button id="online-button" class="mode-link" type="button" aria-label="Online" disabled><span class="mode-tag">MULTIPLAYER</span><span class="mode-copy"><b>PLAY<br>ONLINE</b><small>1v1 rivals · duo batting</small></span><i aria-hidden="true">↗</i></button>
+          </div>
+          <button id="training-button" class="training-tile" type="button" aria-label="Training Nets" disabled><span class="training-icon" aria-hidden="true"><svg viewBox="0 0 56 44"><path d="M6 37V7h44v30M17 7v30M28 7v30M39 7v30M6 17h44M6 27h44M23 39V25m5 14V25m5 14V25M20 25h16"/></svg></span><span><b>TRAINING NETS</b><small>Master your timing. Find your shot.</small></span><span class="training-cta">PRACTISE <i aria-hidden="true">→</i></span></button>
+        </section>
       </div>
       <p id="loading" class="loading" role="status">Preparing the ground…</p>
       <progress id="loading-progress" class="loading-progress" aria-label="Loading game"></progress>
       <p id="career-summary" class="career-summary" hidden></p>
     </section>
     <footer id="venue" class="venue">
-      <div><strong>SUNCREST OVAL</strong><span>DAY MATCH <i></i> DRY PITCH</span></div>
-      <div class="edition"><span>01 / ARCADE SERIES</span><strong>2–20 OVERS PER SIDE</strong></div>
+      <div class="venue-info"><span class="ground-dot" aria-hidden="true"></span><strong id="home-venue-name">SUNCREST OVAL</strong><span>HOME GROUND</span></div>
+      <div class="edition"><span>SWIPE TO BAT. PLAY TO WIN.</span><span class="footer-seam" aria-hidden="true">/////</span></div>
     </footer>
 
     <section id="scoreboard" class="scoreboard" aria-label="Match scoreboard" hidden>
@@ -83,7 +88,7 @@
       <div id="swipe-cue" class="swipe-cue"><svg viewBox="0 0 40 70" aria-hidden="true"><path d="M20 60V12M7 27L20 12L33 27"/></svg><b>SWIPE TO BAT</b><span>Drag to aim · release near the ball</span></div>
       <div id="target-label" class="target-label" hidden></div>
       <div id="countdown" class="countdown" hidden aria-live="polite"></div>
-      <div id="callout" class="callout" hidden aria-live="polite"><strong id="call-title"></strong><span id="call-detail"></span></div>
+      <div id="callout" class="callout" hidden aria-live="polite"><span id="call-kicker" class="call-kicker">DELIVERY</span><strong id="call-title"></strong><span id="call-detail"></span><p id="match-milestone" class="match-milestone" hidden role="status"></p></div>
       <button id="review-hint" class="review-hint" type="button" hidden>Send to the third umpire <small>V</small></button>
     </section>
 
@@ -152,44 +157,72 @@
       <p id="field-notice" role="status"></p>
       <button id="field-close" class="primary" type="button">Back to match</button>
     </dialog>
-    <dialog id="setup-dialog" class="overlay" aria-labelledby="setup-title">
-      <p class="eyebrow">SOLO ARCADE</p>
-      <h2 id="setup-title">Match setup</h2>
-      <p id="setup-format" class="overlay-text"></p>
+    <dialog id="setup-dialog" class="overlay setup-dialog" aria-labelledby="setup-title">
+      <header class="menu-heading">
+        <div><p class="eyebrow">SOLO ARCADE / PRE-MATCH</p><h2 id="setup-title">Match setup</h2></div>
+        <button id="setup-dismiss" class="menu-close" type="button" aria-label="Close match setup">×</button>
+      </header>
+      <div class="matchup-strip" aria-label="Suncrest versus Ridgebacks"><span class="matchup-team"><b class="team-badge">S</b><span><small>YOUR TEAM</small><strong>SUNCREST</strong></span></span><i>VS</i><span class="matchup-team rival"><span><small>OPPOSITION</small><strong>RIDGEBACKS</strong></span><b class="team-badge">R</b></span></div>
+      <div class="match-preparation-grid">
+      <section id="setup-preview" class="setup-preview" aria-label="Selected match conditions" data-venue="suncrest">
+        <span class="setup-preview-kicker"><i aria-hidden="true"></i> SELECTED GROUND</span>
+        <svg class="venue-illustration" viewBox="0 0 280 180" aria-hidden="true">
+          <ellipse class="venue-shadow" cx="140" cy="143" rx="125" ry="24"/>
+          <path class="preview-stand" d="M17 85c0-38 55-65 123-65s123 27 123 65v20c0 36-55 63-123 63S17 141 17 105Z"/>
+          <ellipse class="preview-stand-top" cx="140" cy="85" rx="123" ry="65"/>
+          <ellipse class="preview-grass" cx="140" cy="88" rx="108" ry="53"/>
+          <path class="venue-stripes" d="M57 61l166 44M35 81l164 44M41 104l103 28M84 45l161 43M133 37l100 27"/>
+          <ellipse class="preview-boundary" cx="140" cy="88" rx="96" ry="46"/>
+          <ellipse class="preview-ring" cx="140" cy="88" rx="54" ry="27"/>
+          <path class="preview-pitch" d="m134 64 16 4-10 45-16-4Z"/><path class="preview-crease" d="m130 74 20 5m-26 20 20 5"/>
+          <g class="venue-stumps"><path d="m139 69v-8m3 9v-8m-6 7v-8m-5 46v-8m3 9v-8m-6 7v-8"/></g>
+          <g class="venue-floodlights"><path d="M39 62V15m202 47V15M16 105V61m248 44V61"/><path class="light-bank" d="M27 8h24v11H27zM229 8h24v11h-24zM5 54h22v11H5zM253 54h22v11h-22z"/></g>
+          <g class="venue-fielders"><circle cx="86" cy="67" r="3"/><circle cx="181" cy="111" r="3"/><circle cx="83" cy="108" r="3"/><circle cx="201" cy="73" r="3"/><circle cx="164" cy="55" r="3"/></g>
+        </svg>
+        <div class="setup-preview-copy"><strong id="setup-preview-name">Suncrest Oval</strong><p id="setup-preview-detail"></p><span id="setup-preview-match"></span><span id="setup-format" class="format-chip"></span></div>
+      </section>
       <form id="setup-form" class="setup-form">
+        <fieldset class="setup-group"><legend><b>01</b> <span>Match conditions</span></legend>
         <label>Overs per side <select id="setup-overs"></select></label>
         <label>Ground <select id="setup-venue"></select></label>
         <label>Pitch <select id="setup-pitch"></select></label>
         <label>Weather <select id="setup-weather"></select></label>
+        </fieldset>
+        <fieldset class="setup-group"><legend><b>02</b> <span>Game plan</span></legend>
         <label>Field preset <select id="setup-field"></select></label>
         <label>AI difficulty <select id="setup-difficulty"></select></label>
         <label>Innings order <select id="setup-toss"></select></label>
         <label>Running <select id="setup-running"></select></label>
         <label>Fielding <select id="setup-fielding"></select></label>
-        <div class="setup-actions">
-          <button class="primary" type="submit">Start match →</button>
-          <button id="setup-cancel" class="secondary" type="button">Back</button>
-        </div>
+        </fieldset>
       </form>
+      </div>
+      <div class="setup-actions"><button id="setup-cancel" class="secondary" type="button">Back</button><button class="primary" type="submit" form="setup-form">Start match <span aria-hidden="true">↗</span></button></div>
     </dialog>
     <dialog id="lineup-dialog" class="overlay lineup-dialog" aria-labelledby="lineup-title">
-      <p class="eyebrow">SUNCREST SQUAD</p>
-      <h2 id="lineup-title">Dressing room</h2>
-      <p class="overlay-text">Select your XI and set the batting order for Solo.</p>
+      <header class="menu-heading">
+        <div><p class="eyebrow">SUNCREST / SQUAD MANAGEMENT</p><h2 id="lineup-title">Dressing room</h2></div>
+        <button id="lineup-dismiss" class="menu-close" type="button" aria-label="Close dressing room">×</button>
+      </header>
+      <section class="squad-banner" aria-label="Suncrest squad">
+        <div class="squad-club"><span class="squad-crest" aria-hidden="true">S<span>XI</span></span><span><small>YOUR CLUB</small><strong>SUNCREST</strong><span>SELECT YOUR XI · SET THE BATTING ORDER</span></span></div>
+        <div class="squad-balance" aria-label="Selected squad composition"><span><strong id="lineup-batters">5</strong>BATTERS</span><span><strong id="lineup-bowlers">5</strong>BOWLERS</span><span><strong id="lineup-keepers">1</strong>KEEPER</span></div>
+      </section>
       <div class="lineup-lists">
         <section aria-labelledby="lineup-count">
-          <h3 id="lineup-count" class="eyebrow"></h3>
+          <div class="roster-heading"><h3 id="lineup-count" class="eyebrow"></h3><span>↑ ↓ BATTING ORDER</span></div>
           <ol id="lineup-chosen"></ol>
         </section>
         <section aria-labelledby="bench-title">
-          <h3 id="bench-title" class="eyebrow">RESERVES</h3>
+          <div class="roster-heading"><h3 id="bench-title" class="eyebrow">RESERVES</h3><span id="bench-count">4 players</span></div>
           <ul id="lineup-bench"></ul>
+          <p class="squad-tip">XI REQUIREMENTS<br>1 wicketkeeper minimum · 5 bowlers minimum<br>Bench a player to bring in a reserve.</p>
         </section>
       </div>
-      <p id="lineup-status" class="overlay-text" role="status"></p>
       <div class="setup-actions">
-        <button id="lineup-save" class="primary" type="button">Save XI</button>
+        <p id="lineup-status" class="overlay-text" role="status"></p>
         <button id="lineup-cancel" class="secondary" type="button">Back</button>
+        <button id="lineup-save" class="primary" type="button" aria-label="Save XI">Save XI <span aria-hidden="true">✓</span></button>
       </div>
     </dialog>
     <dialog id="drs-dialog" class="overlay drs-dialog" aria-labelledby="drs-title">
@@ -216,13 +249,15 @@
     <dialog id="settings-dialog" class="overlay" aria-labelledby="settings-title">
       <p class="eyebrow">SETTINGS</p>
       <h2 id="settings-title">Settings</h2>
+      <p class="overlay-text">Make the game feel right for you.</p>
       <div class="setup-form">
-        <label>Sound <input id="setting-sound" type="checkbox" checked></label>
-        <label>Reduced motion <input id="setting-motion" type="checkbox"></label>
-        <label>Show the timing needle <input id="setting-needle" type="checkbox" checked></label>
-        <label>Graphics <select id="setting-quality"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
-        <label>Batting timing <select id="setting-difficulty"><option value="relaxed">Relaxed</option><option value="standard">Standard</option><option value="precise">Precise</option></select></label>
+        <label><span>Stadium sound <small class="setting-description">The crowd, the bat, the atmosphere.</small></span><input id="setting-sound" type="checkbox" aria-label="Sound" checked></label>
+        <label><span>Reduced motion <small class="setting-description">A calmer camera and interface.</small></span><input id="setting-motion" type="checkbox" aria-label="Reduced motion"></label>
+        <label><span>Timing needle <small class="setting-description">Find the sweet spot with a visual cue.</small></span><input id="setting-needle" type="checkbox" aria-label="Show the timing needle" checked></label>
+        <label><span>Graphics <small class="setting-description">Choose your level of detail.</small></span><select id="setting-quality" aria-label="Graphics"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+        <label><span>Batting timing <small class="setting-description">Set the challenge at the crease.</small></span><select id="setting-difficulty" aria-label="Batting timing"><option value="relaxed">Relaxed</option><option value="standard">Standard</option><option value="precise">Precise</option></select></label>
       </div>
+      <p class="settings-note">Choose Low for smoother play on smaller devices. Reduced motion keeps decorative camera and interface motion to a minimum.</p>
       <div class="setup-actions"><button id="settings-close" class="secondary" type="button">Close</button></div>
     </dialog>
     <dialog id="scorecard-dialog" class="overlay scorecard-dialog" aria-labelledby="scorecard-title">
@@ -230,16 +265,20 @@
       <div id="scorecard-body" class="scorecard-body"></div>
     </dialog>
     <dialog id="online-dialog" class="overlay" aria-labelledby="online-title">
-      <p class="eyebrow">MULTIPLAYER</p>
+      <p class="eyebrow">CRICKET IS BETTER TOGETHER</p>
       <h2 id="online-title">Online play</h2>
-      <p class="overlay-text">Find a five-over opponent or invite a friend to a private match.</p>
+      <p class="overlay-text">A friendly rivalry. A winning partnership. Take your pick.</p>
+      <div class="online-hero"><span aria-hidden="true">1v1</span><div><p>A rival. Five overs. All to play for.</p><small>Find an opponent for a quick match.</small></div></div>
       <div class="overlay-actions">
-        <button id="quick-online" class="primary" type="button">Quick 1v1</button>
-        <label class="online-field">Private overs <input id="private-overs" type="number" min="2" max="20" value="5" inputmode="numeric"></label>
-        <button id="create-duo" class="secondary" type="button">Duo Batting · bat together vs AI</button>
-        <button id="create-online" class="secondary" type="button">Create private room</button>
-        <label class="online-field">Room code <input id="join-code" type="text" maxlength="12" autocomplete="off" spellcheck="false"></label>
-        <button id="join-online" class="secondary" type="button">Join private room</button>
+        <button id="quick-online" class="primary" type="button" aria-label="Quick 1v1">Find a match <span aria-hidden="true">↗</span></button>
+        <fieldset class="online-section"><legend>Bring your own squad</legend>
+          <label class="online-field">Overs per side <input id="private-overs" type="number" min="2" max="20" value="5" inputmode="numeric"></label>
+          <div class="online-room-actions"><button id="create-online" class="secondary" type="button">Create private room</button><button id="create-duo" class="secondary" type="button" aria-label="Duo Batting · bat together vs AI">Duo batting · vs AI</button></div>
+        </fieldset>
+        <fieldset class="online-section"><legend>Already have an invite?</legend>
+          <label class="online-field">Room code <input id="join-code" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="Enter 12-character code"></label>
+          <button id="join-online" class="secondary" type="button">Join private room <span aria-hidden="true">→</span></button>
+        </fieldset>
         <button id="close-online" class="secondary" type="button">Back</button>
       </div>
     </dialog>

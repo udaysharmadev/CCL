@@ -63,7 +63,7 @@ try {
   page.on('console', (entry) => { if (entry.type() === 'error') errors.push(entry.text()) })
   await page.goto(url)
   assert.equal(await page.title(), 'Crazy Cricket League')
-  await page.locator('#stadium canvas').waitFor()
+  await page.locator('#solo-button:enabled').waitFor()
   await screenshot(page, '01-home.png')
   await page.getByRole('button', { name: 'Play Solo Arcade' }).click()
   await page.locator('#pause-button').click()
