@@ -190,11 +190,17 @@ test('byes and leg byes are charged to the team and never to the bowler', () => 
   assert.equal(innings.bowling[0]?.runs, 0, 'byes are not charged to the bowler')
 })
 
-test('penalty runs and overthrow runs reach the team total', () => {
+test('penalty runs and overthrow runs reach the team total and penalty extras', () => {
   let innings = newInnings(2, undefined, ['A', 'B'])
-  innings = applyDelivery(innings, { ...dot, overthrowRuns: 2, penalty: 5 })
+  const outcome = { ...dot, overthrowRuns: 2, penalty: 5, bowler: 'W1' }
+  innings = applyDelivery(innings, outcome)
   assert.equal(innings.runs, 7)
-  assert.equal(innings.extras.penalty, 5)
+  assert.equal(innings.extras.penalty, 7)
+  assert.equal(innings.batting[0].runs, 0)
+  assert.equal(innings.bowling[0].runs, 2, 'only the overthrow penalty is charged to the bowler')
+  assert.deepEqual(innings.history, [outcome], 'aggregate extras must not duplicate the sealed outcome fields')
+  assert.equal(innings.batting.reduce((runs, batter) => runs + batter.runs, 0) +
+    Object.values(innings.extras).reduce((a, b) => a + b, 0), innings.runs)
 })
 
 test('a free hit still permits a run out but protects against every other dismissal', () => {

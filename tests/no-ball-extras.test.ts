@@ -62,7 +62,9 @@ function scored(sim: Delivery, expected: {
   const innings = applyDelivery(newInnings(2, undefined, ['A', 'B', 'C']), outcome)
   assert.equal(innings.runs, 1 + bat + byes + legByes + overthrow)
   assert.equal(totalRuns(outcome), innings.runs, 'scorecard and reducer use the same components')
-  assert.deepEqual(innings.extras, { wide: 0, noBall: 1, byes, legByes, penalty: 0 })
+  assert.deepEqual(innings.extras, { wide: 0, noBall: 1, byes, legByes, penalty: overthrow })
+  assert.equal(innings.batting.reduce((runs, batter) => runs + batter.runs, 0) +
+    Object.values(innings.extras).reduce((a, b) => a + b, 0), innings.runs)
   assert.equal(innings.batting[0].runs, bat)
   assert.equal(innings.batting[0].balls, 0)
   assert.deepEqual(innings.bowling, [{

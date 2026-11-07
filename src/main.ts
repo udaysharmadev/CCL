@@ -1027,6 +1027,11 @@ function describe(outcome: DeliveryOutcome) {
     const runs = outcome.batRuns
     title = `${runs} ${runs === 1 ? 'run' : 'runs'}`
   }
+  if (outcome.overthrowRuns) {
+    const award = `${outcome.overthrowRuns} overthrow ${outcome.overthrowRuns === 1 ? 'run' : 'runs'}`
+    if (title === 'Dot ball') title = award
+    else detail += ` · +${award}`
+  }
   return { title, detail }
 }
 
@@ -1313,6 +1318,7 @@ function renderScore(innings: Innings) {
     const token=document.createElement('span')
     token.textContent=deliveryToken(outcome);token.title=describe(outcome).title
     token.className=outcome.wicket?'wicket':outcome.reason==='boundary'?'major':''
+    if (outcome.overthrowRuns) token.classList.add('overthrow')
     return token
   })
   for(let i=show?.legal ?? 0;i<6;i++) {

@@ -495,6 +495,7 @@ select, .online-field input { min-height: 27px; color: var(--paper); background:
 .batter-strip .on-strike::before { content: ''; position: absolute; left: -12px; top: 4px; width: 3px; height: 28px; border-radius: 2px; background: #e7ca84; }
 #score-stats::before { content: 'BOWLING'; display: block; color: #9fb6d0; font-size: 7px; letter-spacing: .14em; margin-bottom: 4px; }
 .ribbon .pending-ball { background: transparent; border: 1px solid #91acc640; color: #8297b4; }
+.ribbon .overthrow { width: max-content; flex-shrink: 0; padding-inline: 5px; border-radius: 12px; }
 .scorecard-dialog { width: min(1040px, 96vw); max-width: 1040px; max-height: 92dvh; padding: 0 24px 24px; border-radius: 16px; background: #101c32; color: #eaf0f7; }
 .scorecard-header { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 20px 0 14px; background: #101c32; border-bottom: 1px solid #a6bed328; }
 .scorecard-header h2 { font: 650 23px/1.3 Inter,system-ui,sans-serif; letter-spacing: -.03em; }

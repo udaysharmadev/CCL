@@ -115,13 +115,19 @@ export function formatOvers(legalBalls: number): string {
   return `${Math.floor(legalBalls / BALLS_PER_OVER)}.${legalBalls % BALLS_PER_OVER}`
 }
 
-export function deliveryToken(outcome: DeliveryOutcome): string {
+function baseDeliveryToken(outcome: DeliveryOutcome): string {
   if (outcome.wicket) return 'W'
   if (outcome.noBall) return outcome.batRuns ? `Nb+${outcome.batRuns}` : 'Nb'
   if (outcome.wide) return outcome.wide > 1 ? `${outcome.wide}Wd` : 'Wd'
   if (outcome.byes) return `${outcome.byes}B`
   if (outcome.legByes) return `${outcome.legByes}Lb`
   return outcome.batRuns ? String(outcome.batRuns) : '•'
+}
+
+export function deliveryToken(outcome: DeliveryOutcome): string {
+  const token = baseDeliveryToken(outcome)
+  if (!outcome.overthrowRuns) return token
+  return `${token === '•' ? '' : `${token}+`}${outcome.overthrowRuns}OT`
 }
 
 const DISMISSAL_TEXT: Readonly<Record<Wicket, string>> = {
@@ -274,7 +280,9 @@ export function applyDelivery(state: Innings, outcome: DeliveryOutcome): Innings
       noBall: state.extras.noBall + noBall,
       byes: state.extras.byes + byes,
       legByes: state.extras.legByes + legByes,
-      penalty: state.extras.penalty + penaltyRuns,
+      // Both are penalty extras; keep their outcome fields separate because
+      // only overthrows are charged to the bowler under the CCL rules.
+      penalty: state.extras.penalty + penaltyRuns + overthrowRuns,
     },
     batting, bowling, partnerships, fallOfWickets, lastOverRuns,
   }

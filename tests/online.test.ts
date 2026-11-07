@@ -399,6 +399,92 @@ test('H1: seed 41 run at tick 10 survives a 75 ms delayed pong and drive at tick
   assertScore(finished.score, score)
 })
 
+test('H5: an authoritative overthrow survives restart, replay and reconnect without a second award', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'ccl-overthrow-recovery-'))
+  const hosts: Awaited<ReturnType<typeof startOnlineServer>>[] = []
+  t.after(async () => {
+    for (const host of hosts) await host.close()
+    rmSync(directory, { recursive: true, force: true })
+  })
+  let now = 1000
+  t.mock.method(performance, 'now', () => 0)
+  const options = { databasePath: join(directory, 'room.sqlite'), clock: () => now, toss: () => 0 as const, nextSeed: () => 8 }
+  let host = await startOnlineServer(options)
+  hosts.push(host)
+  let { batter, bowler, battingSession, bowlingSession } = await quickMatch(host)
+  bowler.send({ type: 'bowl', seq: 1, delivery: 1, kind: 'fast', line: .44, effort: .63 })
+  await bowler.ack(2)
+  const releaseAt = now + ONLINE_WINDUP_MS
+  const run = { type: 'running', seq: 2, delivery: 1, running: true }
+  const swing = { type: 'swing', seq: 3, delivery: 1, kind: 'drive', aim: 0, power: .7 }
+  now = releaseAt + 10 * DT * 1000 + .1
+  batter.send(run)
+  await batter.ack(3)
+  now = releaseAt + 37 * DT * 1000 + .1
+  batter.send(swing)
+  await batter.ack(4)
+  now = releaseAt + 600 * DT * 1000 + .1
+  const before = await batter.snapshot((state) => state.active?.tick === 600)
+  assert.equal(before.active?.phase, 'field')
+  assert.equal(before.score.attempts, 0)
+
+  await host.close()
+  host = await startOnlineServer(options)
+  hosts.push(host)
+  batter = await connect(host.url)
+  bowler = await connect(host.url)
+  batter.send({ type: 'resume', room: battingSession.room, token: battingSession.token })
+  assert.equal((await batter.session()).nextSeq, 4)
+  bowler.send({ type: 'resume', room: bowlingSession.room, token: bowlingSession.token })
+  assert.equal((await bowler.session()).nextSeq, 2)
+  const restored = await batter.snapshot((state) => state.connected.every(Boolean))
+  assert.deepEqual(restored.active, before.active)
+  assert.deepEqual(restored.score, before.score)
+  batter.send(run)
+  await batter.rejection('duplicate-sequence', 4)
+  batter.send(swing)
+  await batter.rejection('duplicate-sequence', 4)
+
+  now = releaseAt + 1500 * DT * 1000
+  const settled = await batter.snapshot((state) => state.last?.delivery === 1)
+  assert.ok(settled.last)
+  const { outcome, replay } = settled.last
+  assert.equal(outcome.batRuns, 1)
+  assert.equal(outcome.completedRuns, 1)
+  assert.equal(outcome.overthrowRuns, 1)
+  assert.equal(outcome.penalty ?? 0, 0, 'the sealed outcome keeps the overthrow separate')
+  assert.equal(outcome.wicket, null)
+  assert.equal(replay.shot?.tick, 37)
+  assert.deepEqual(replay.runs, [{ tick: 10, running: true }])
+  const reconstructed = auditDelivery(settled.last, newInnings(5))
+  assertScore(settled.score, reconstructed)
+  assert.equal(settled.score.runs, 2)
+  assert.equal(settled.score.batting[0].runs, 1)
+  assert.equal(settled.score.bowling[0].runs, 2)
+  assert.deepEqual([settled.score.striker, settled.score.nonStriker], [2, 1])
+  assert.equal(settled.score.attempts, 1)
+  assert.equal(settled.score.recent.length, 1)
+  const sealed = JSON.stringify(settled.last)
+
+  await batter.close()
+  batter = await connect(host.url)
+  batter.send({ type: 'resume', room: battingSession.room, token: battingSession.token })
+  assert.equal((await batter.session()).nextSeq, 4)
+  const reconnected = await batter.snapshot((state) => state.connected.every(Boolean))
+  assert.deepEqual(reconnected.score, settled.score)
+  assert.equal(JSON.stringify(reconnected.last), sealed, 'recovery preserves the sealed outcome and checksum')
+  batter.send(run)
+  await batter.rejection('duplicate-sequence', 4)
+  batter.send({ ...run, seq: 4 })
+  await batter.rejection('stale-delivery', 4)
+  t.diagnostic(JSON.stringify({ seed: 8, runTick: 10, swingTick: 37, checkpointTick: 600,
+    outcome, total: settled.score.runs, batter: settled.score.batting[0].runs,
+    extras: settled.score.extras, bowler: settled.score.bowling[0].runs }))
+  assert.equal(settled.score.extras.penalty, 1, 'the overthrow must appear in authoritative scorecard extras')
+  assert.equal(settled.score.batting.reduce((sum, batter) => sum + batter.runs, 0) +
+    Object.values(settled.score.extras).reduce((sum, value) => sum + value, 0), settled.score.runs)
+})
+
 const runningHistories = [
   { name: 'queued runs before swing', runs: [[10, true], [10, true], [10, true]] },
   { name: 'turn-back before swing', runs: [[10, true], [20, false]] },
