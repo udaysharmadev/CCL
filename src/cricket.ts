@@ -1231,9 +1231,10 @@ export class Delivery implements Motion {
     const wide = !this.noBall && contact === 'miss' && !this.padContact && Math.abs(this.projectedContact.x) > this.missDistance
     // Runs off a ball that never reached the bat are byes, or leg byes when the
     // ball struck the person and a stroke was offered. A boundary the bat never
-    // touched is credited the same way.
+    // touched is credited the same way. The no-ball penalty is separate and
+    // must not suppress these extras.
     const boundaryRuns = reason === 'boundary' ? batRuns : 0
-    const extras = contact === 'miss' && !wide && !this.noBall
+    const extras = contact === 'miss' && !wide
       ? judgeExtras({
         padContact: this.padContact,
         strokeOffered: this.shotOffered,
