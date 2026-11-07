@@ -18,12 +18,16 @@ function play(seed: number, kind: DeliveryKind, options: {
   shot?: { kind: 'defend' | 'loft' | 'hook' | 'cut' | 'drive'; aim?: number; power?: number }
   run?: (sim: Delivery) => void
   runningMode?: 'manual'
+  fieldingMode?: 'manual'
 } = {}) {
   const sim = new Delivery({
     seed, kind, line: options.line, effort: 0.63,
     ...(options.runningMode ? { runningMode: options.runningMode } : {}),
+    ...(options.fieldingMode ? { fieldingMode: options.fieldingMode } : {}),
   })
-  while (!sim.outcome && sim.tick < 900) {
+  // Manual fielding can hold a pickup for eight seconds before returning it.
+  const tickLimit = options.fieldingMode === 'manual' ? 1500 : 900
+  while (!sim.outcome && sim.tick < tickLimit) {
     if (options.swingAt !== undefined && sim.tick === sim.contactTick + options.swingAt) {
       sim.swing({ kind: options.shot?.kind ?? 'defend', aim: options.shot?.aim ?? 0, power: options.shot?.power ?? 0.7 })
     }
@@ -101,9 +105,11 @@ test('a keeper fumble produces a bye, and a pad strike produces a leg bye', () =
   let legByes = 0
   for (let seed = 0; seed < 400 && (byes === 0 || legByes === 0); seed++) {
     for (const kind of DELIVERIES) {
-      const { outcome } = play(seed, kind, { swingAt: -4, shot: { kind: 'hook' } })
-      if (outcome.byes) byes++
-      if (outcome.legByes) legByes++
+      // Hold the collected ball long enough for genuine running. A fumble
+      // alone must not manufacture the bye this reachability test looks for.
+      const { outcome } = play(seed, kind, { swingAt: -4, shot: { kind: 'hook' }, fieldingMode: 'manual' })
+      if (outcome.byes) { assert.equal(outcome.byes, outcome.completedRuns); byes++ }
+      if (outcome.legByes) { assert.equal(outcome.legByes, outcome.completedRuns); legByes++ }
     }
   }
   assert.ok(byes > 0, 'byes must be reachable when the keeper fumbles')

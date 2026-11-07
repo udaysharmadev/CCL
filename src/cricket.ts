@@ -836,15 +836,13 @@ export class Delivery implements Motion {
           return
         }
         if (this.contact === 'miss' && this.fumbles()) {
-          // The keeper has fumbled a ball that beat the bat. The ball is played
-          // away towards the leg side and the batters are safe, because the
-          // keeper never had the ball under control.
+          // A fumble keeps the ball live and creates a running opportunity.
+          // Only advanceRunners can complete a run when both batters ground;
+          // preserve their progress and any runs already completed.
           this.velocity.z *= 0.1
           this.velocity.y = 0
           this.velocity.x = -5
           this.parried = true
-          if (!this.manualRunning) this.completedRuns = 1
-          this.runnerProgress = 0
           this.phase = 'field'
           this.action = 'chase'
           this.fieldTick = this.tick
