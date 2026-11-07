@@ -1205,10 +1205,10 @@ export class Delivery implements Motion {
         this.partnerProgress = 0
         this.running = this.queuedRuns > 0
         this.queuedRuns = Math.max(0, this.queuedRuns - 1)
-      } else if (this.runnerProgress <= 0 || this.partnerProgress <= 0) {
-        this.runnerProgress = Math.max(0, this.runnerProgress)
-        this.partnerProgress = Math.max(0, this.partnerProgress)
-        if (this.runnerProgress <= 0) this.retreating = false
+      } else if (this.runnerProgress <= 0 && this.partnerProgress <= 0) {
+        // One batter can get home first after waiting at the opposite crease.
+        // Keep the shared retreat active until both have returned at their own pace.
+        this.retreating = false
       }
       return
     }
