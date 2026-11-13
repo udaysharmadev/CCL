@@ -71,6 +71,61 @@ test('pace, medium, finger and wrist action choreography is distinct and repeata
   assert.equal(sampleBowlingMotion(defaultPlayerProfile('Rao').bowling, 'flight', 1, 1).stage, 'recover')
 })
 
+test('run-up accelerates into a continuous approach and finishes exactly at the release mark', () => {
+  for (const id of ['Rao', 'Khan', 'Sen', 'Patel', 'Shah']) {
+    const appearance = defaultPlayerProfile(id).bowling
+    let previous = sampleBowlingMotion(appearance, 'windup', 0)
+    for (let frame = 1; frame <= 300; frame++) {
+      const motion = sampleBowlingMotion(appearance, 'windup', frame / 300)
+      assert.ok(motion.distanceRemaining <= previous.distanceRemaining + 1e-9, `${id}: approach never reverses`)
+      assert.ok(previous.distanceRemaining - motion.distanceRemaining < .05, `${id}: no root jump`)
+      assert.ok(Object.values(motion).every(value => typeof value !== 'number' || Number.isFinite(value)))
+      previous = motion
+    }
+    assert.equal(previous.distanceRemaining, 0)
+    assert.equal(previous.armCircle, 1)
+    assert.equal(previous.gather, 0)
+    const start = sampleBowlingMotion(appearance, 'flight', 1, 0)
+    assert.equal(start.distanceRemaining, previous.distanceRemaining)
+    assert.equal(start.armCircle, previous.armCircle)
+    assert.equal(start.lean, previous.lean)
+    assert.equal(start.twist, previous.twist)
+    assert.ok(sampleBowlingMotion(appearance, 'flight', 1, .4).armCircle > 1, `${id}: arm completes its wheel after release`)
+  }
+})
+
+test('delivery hand, hips and shoes remain continuous through the full action and recovery', () => {
+  const actor = rig('bowler')
+  for (const id of ['Rao', 'Khan', 'Patel', 'Shah']) {
+    const player = defaultPlayerProfile(id)
+    const execution = createBowlingExecution(player, { variation: availableVariations(player)[0].id,
+      line: .1, length: 5.5, power: .8, movement: .6, release: 1, side: 'over', batterHand: 'right' })
+    const endpoint = bowlingReleasePoint(execution)
+    let previousHand: Vector3 | undefined
+    let previousRoot: Vector3 | undefined
+    let plantedFoot: Vector3 | undefined
+    for (let frame = 0; frame <= 270; frame++) {
+      const following = frame > 180
+      const age = following ? (frame - 180) / 60 : 0
+      const motion = bowlingPose(actor, 0, following ? 'flight' : 'windup', following ? 1 : frame / 180, age, execution, endpoint)
+      actor.base.updateWorldMatrix(true, true)
+      const hand = actor.arms[motion.armIndex].hand.getWorldPosition(new Vector3())
+      if (previousHand) assert.ok(previousHand.distanceTo(hand) < .22, `${id} frame ${frame}: hand does not pop`)
+      if (previousRoot) assert.ok(previousRoot.distanceTo(actor.base.position) < .085, `${id} frame ${frame}: hips do not teleport`)
+      for (const leg of actor.legs) assert.ok(leg.ankle.getWorldPosition(new Vector3()).y >= .07, `${id}: shoes stay above the surface`)
+      if (frame === 180) plantedFoot = actor.legs[motion.frontFootIndex].ankle.getWorldPosition(new Vector3())
+      if (frame >= 180 && frame <= 187) {
+        const frontFoot = actor.legs[motion.frontFootIndex].ankle.getWorldPosition(new Vector3())
+        assert.ok(Math.abs(frontFoot.y - .065 * 1.28) < .00001,
+          `${id}: front foot braces the first follow-through frames`)
+        assert.ok(frontFoot.distanceTo(plantedFoot!) < .00001, `${id}: braced shoe does not slide`)
+      }
+      previousHand = hand
+      previousRoot = actor.base.position.clone()
+    }
+  }
+})
+
 test('left batting reverses stance, leading foot and top/bottom hands without negative model scale', () => {
   const actor = rig('batter')
   actor.base.position.set(-.57, 0, .08)

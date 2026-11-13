@@ -1,0 +1,15 @@
+{
+  "browser": "157.0.8103.51",
+  "checks": [
+    "Static cricket graphic loads and the live stadium stays hidden on home.",
+    "desktop (1440×900): all home options reachable; setup, lineup, settings, guide, and online dialogs fit and support keyboard dismissal.",
+    "mobile (390×844): all home options reachable; setup, lineup, settings, guide, and online dialogs fit and support keyboard dismissal.",
+    "small-mobile (320×740): all home options reachable; setup, lineup, settings, guide, and online dialogs fit and support keyboard dismissal.",
+    "landscape (844×390): all home options reachable; setup, lineup, settings, guide, and online dialogs fit and support keyboard dismissal.",
+    "Bench, replace, and reorder players; XI validation and saved order survive reload.",
+    "Sound, motion, timing needle, graphics, and timing preferences persist after reload.",
+    "All setup selections save, start a 20-over Harbor match, and reappear on return.",
+    "Training Nets and Longest Six start and return to the home screen."
+  ],
+  "errors": []
+}

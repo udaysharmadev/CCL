@@ -4,6 +4,7 @@ import './lobby.css'
 import './menu-theme.css'
 import './bowling-hud.css'
 import './squad.css'
+import './bright-theme.css'
 import { createBowlingHud } from './bowling-hud.ts'
 import { createPlayerSelection } from './player-selection-ui.ts'
 import { defaultPlayerProfile, localBattingStyle, type PlayerProfile } from './player-profile.ts'
@@ -190,11 +191,22 @@ let entranceEnd: 'striker' | 'nonStriker' = 'striker'
 let preparedExecution: BowlingExecution | undefined
 const playerSelection = createPlayerSelection(home)
 const bowlingHud = createBowlingHud(ui.dock, () => {
-  if (paused || phase !== 'ready' && phase !== 'dead') return
+  if (paused) return
+  if (bowlingHud.timing && phase === 'windup') { lockBowlingRelease(); return }
+  if (phase !== 'ready' && phase !== 'dead') return
   if (ensurePlayerSelection()) return
-  if (!bowlingHud.timing) bowlingHud.startTiming()
-  else { bowlingHud.finishTiming(); beginBall(true) }
+  if (bowlingHud.startTiming(WINDUP_SECONDS)) beginBall(true)
 }, () => showBowlerSelection(), () => { refreshPending = true })
+
+/** Seal the timed release into the recorded delivery before physics creates the ball. */
+function lockBowlingRelease(missed = false) {
+  if (!record?.options.bowling || !record.players || !bowlingHud.timing) return
+  bowlingHud.finishTiming(missed)
+  const execution = createBowlingExecution(record.players.bowler, { ...bowlingHud.controls,
+    workload: record.options.bowling.workload })
+  record.options = { ...record.options, bowling: execution, kind: bowlingKind(execution), line: execution.line, effort: execution.power }
+  refreshPending = true
+}
 
 function matchProfile(id: string): PlayerProfile { return match?.profiles[id] ?? defaultPlayerProfile(id) }
 function battingProfiles(): PlayerProfile[] { return (isBowling() ? OPPONENT_NAMES : match?.lineup ?? []).map(matchProfile) }
@@ -218,7 +230,7 @@ function showBowlerSelection() {
     match.selectedBowler = { playerId: id, over: Math.floor(state.legalBalls / 6) }
     record = undefined; live = undefined; signal = undefined; setPhase('ready')
     resumeSelection(); refreshPending = true
-  })
+  }, { opponentProfiles: OPPONENT_NAMES.map(matchProfile), venue: VENUE_NAMES[match.settings.venue] })
 }
 /** Player-choice gates run only on managed local innings, after DRS settles. */
 function ensurePlayerSelection(): boolean {
@@ -230,13 +242,14 @@ function ensurePlayerSelection(): boolean {
     playerSelection.openers(battingProfiles(), state, (a, b) => {
       if (!match) return
       replaceInnings(chooseOpeningPair(state, a, b)); match.openingChosen = true; resumeSelection(true)
-    }); return true
+    }, { opponentProfiles: OPPONENT_NAMES.map(matchProfile), venue: VENUE_NAMES[match.settings.venue] }); return true
   }
   if (state.selection?.pendingBatter) {
     if (isBowling()) { const next = recommendedBatter(state); if (next) replaceInnings(chooseNextBatter(state, next)) }
     else {
       paused = true; setGameplay(false)
-      playerSelection.batter(battingProfiles(), state, index => { replaceInnings(chooseNextBatter(state, index)); resumeSelection(true, state.selection!.pendingBatter!) }); return true
+      playerSelection.batter(battingProfiles(), state, index => { replaceInnings(chooseNextBatter(state, index)); resumeSelection(true, state.selection!.pendingBatter!) },
+        { opponentProfiles: OPPONENT_NAMES.map(matchProfile), venue: VENUE_NAMES[match.settings.venue] }); return true
     }
   }
   if (needsBowlerSelection(state, match.selectedBowler)) {
@@ -521,7 +534,7 @@ function beginBall(executed = false) {
   if (!match || !innings || innings.complete || (view === 'six' && six.complete) || paused || replaying ||
     (phase !== 'ready' && phase !== 'dead')) return
   if (ensurePlayerSelection()) return
-  if (view === 'solo' && isBowling() && !executed) { bowlingHud.startTiming(); return }
+  if (view === 'solo' && isBowling() && !executed) { document.getElementById('bowl-execute')?.click(); return }
   const bowling = isBowling()
   const seed = nextSeed(match.seed, innings.attempts, bowling)
   let kind = activeDelivery
@@ -1601,6 +1614,7 @@ function frame(now: number) {
       if (ui.countdown.textContent !== label) ui.countdown.textContent = label
       if (elapsed >= duration) {
         accumulator = 0
+        if (view === 'solo' && isBowling() && !replaying && bowlingHud.timing) lockBowlingRelease(true)
         release()
       }
     } else if (phase === 'flight' || phase === 'field') {
@@ -1902,7 +1916,7 @@ document.addEventListener('keydown', (event) => {
     return
   }
   if (paused || replaying || event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement) return
-  if (view === 'solo' && isBowling() && event.code === 'Space' && (phase === 'ready' || phase === 'dead')) {
+  if (view === 'solo' && isBowling() && event.code === 'Space' && (phase === 'ready' || phase === 'dead' || phase === 'windup' && bowlingHud.timing)) {
     event.preventDefault(); document.getElementById('bowl-execute')?.click(); return
   }
   if (!ui.fieldingControls.hidden) {

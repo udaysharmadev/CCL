@@ -1,0 +1,18 @@
+{
+  "bat": {
+    "ownCount": 11,
+    "opponentCount": 11,
+    "lastOwnBottom": 794.25,
+    "lastOpponentBottom": 759.734375,
+    "footerTop": 810.25,
+    "overflow": 0
+  },
+  "bowl": {
+    "ownCount": 11,
+    "opponentCount": 11,
+    "lastOwnBottom": 766.75,
+    "lastOpponentBottom": 732.234375,
+    "footerTop": 782.75,
+    "overflow": 0
+  }
+}

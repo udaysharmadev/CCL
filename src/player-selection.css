@@ -1,0 +1,160 @@
+#player-choice-dialog {
+  --choice-ink: #12336c;
+  width: min(1120px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
+  padding: 0; border: 1px solid #bcd4ff; border-radius: 20px;
+  background: #f3f8ff; color: var(--choice-ink); box-shadow: 0 28px 100px #061b5f65; overflow: auto;
+}
+#player-choice-dialog::backdrop { background: #03174db8; backdrop-filter: blur(9px); }
+#player-choice-dialog .player-choice-heading { display: flex; align-items: center; gap: 20px; padding: 24px 28px 20px; background: linear-gradient(110deg, #1256ec, #218cfb); color: #fff; }
+#player-choice-dialog .player-choice-heading > div { flex: 1; min-width: 0; }
+#player-choice-dialog .player-choice-kicker { color: #bdeeff; font-size: 9px; font-weight: 800; letter-spacing: .16em; }
+#player-choice-dialog h2 { margin: 7px 0; color: #fff; font: 850 36px/1.05 var(--display, sans-serif); letter-spacing: -.025em; }
+#player-choice-dialog .player-choice-detail { max-width: 650px; margin: 0; color: #e5f2ff; font-size: 12px; line-height: 1.5; }
+#player-choice-dialog .choice-league-mark { display: grid; place-items: center; width: 70px; height: 72px; flex-shrink: 0; border: 2px solid #ffffff66; border-radius: 14px; background: #ffffff16; font: italic 900 27px var(--display, sans-serif); }
+#player-choice-dialog .choice-matchbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 17px 28px; border-bottom: 1px solid #d2e1f6; background: #fff; }
+#player-choice-dialog .choice-matchup { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+#player-choice-dialog .choice-matchup strong { font: 850 20px var(--display, sans-serif); text-transform: uppercase; }
+#player-choice-dialog .choice-matchup strong:first-child { color: #1256ec; }
+#player-choice-dialog .choice-matchup strong:last-child { color: #df3f72; }
+#player-choice-dialog .choice-matchup > span { color: #7592bc; font: italic 800 14px var(--display, sans-serif); }
+#player-choice-dialog .choice-match-score { display: flex; align-items: center; gap: 13px; flex-shrink: 0; }
+#player-choice-dialog .choice-match-score > strong { color: #0b2c61; font: 850 30px/1 var(--display, sans-serif); font-variant-numeric: tabular-nums; }
+#player-choice-dialog .choice-match-score small { max-width: 140px; color: #61799f; font-size: 9px; font-weight: 750; line-height: 1.6; }
+#player-choice-dialog .choice-partnership { display: flex; gap: 12px; padding: 15px 28px 0; }
+#player-choice-dialog .choice-partnership[hidden] { display: none; }
+#player-choice-dialog .choice-partnership-step { display: flex; align-items: center; flex: 1; gap: 10px; padding: 10px 12px; border: 1px solid #c9ddfc; border-radius: 8px; background: #e7f0ff; color: #6580a6; font-size: 10px; font-weight: 800; }
+#player-choice-dialog .choice-partnership-step b { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #cbdcf6; font-size: 12px; }
+#player-choice-dialog .choice-partnership-step.active { border-color: #3781ff; background: #e2edff; color: #1256ec; }
+#player-choice-dialog .choice-partnership-step.active b { background: #1460f2; color: #fff; }
+#player-choice-dialog .choice-partnership-step.complete { border-color: #4ad7ad; background: #ddfbef; color: #087550; }
+#player-choice-dialog .choice-partnership-step.complete b { background: #10b980; color: #fff; }
+#player-choice-dialog .choice-change-striker { margin-left: auto; padding: 5px 6px; border: 1px solid #72d7b5; border-radius: 4px; background: #fff; color: #087550; font-size: 9px; font-weight: 800; }
+#player-choice-dialog .choice-change-striker:hover { background: #c4f9e5; }
+#player-choice-dialog .choice-boards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 20px 28px; }
+#player-choice-dialog .choice-boards.has-opponent { grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); }
+#player-choice-dialog .choice-main-board, #player-choice-dialog .choice-opponent-board { min-width: 0; border: 1px solid #c4d9f6; border-radius: 11px; background: #fff; overflow: hidden; }
+#player-choice-dialog .choice-opponent-board[hidden] { display: none; }
+#player-choice-dialog .choice-board-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 15px; background: #103d91; color: #fff; }
+#player-choice-dialog .choice-board-header strong { font-size: 11px; letter-spacing: .035em; }
+#player-choice-dialog .choice-board-header > span { color: #b9d7ff; font-size: 8px; font-weight: 750; text-align: right; }
+#player-choice-dialog .choice-opponent-board .choice-board-header { background: #d53468; }
+#player-choice-dialog .choice-opponent-board .choice-board-header > span { color: #ffe0ed; }
+#player-choice-dialog .player-choice-grid { display: block; margin: 0; overflow: visible; }
+#player-choice-dialog .choice-score-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px; }
+#player-choice-dialog .choice-score-table thead { background: #e8f1ff; color: #5073a6; }
+#player-choice-dialog .choice-score-table th { height: 34px; padding: 6px 2px; font-size: 8px; font-weight: 800; letter-spacing: .04em; text-align: center; }
+#player-choice-dialog .choice-score-table td { height: 47px; padding: 3px 2px; border-bottom: 1px solid #e4ecf9; font-variant-numeric: tabular-nums; }
+#player-choice-dialog .choice-score-table tbody tr:last-child td { border-bottom: 0; }
+#player-choice-dialog .choice-score-table th:first-child { width: 30px; }
+#player-choice-dialog .choice-score-table .choice-player-column { width: 36%; padding-left: 3px; text-align: left; }
+#player-choice-dialog .choice-score-table .choice-status-column { width: 110px; padding-right: 9px; text-align: right; }
+#player-choice-dialog .choice-order { color: #7a95b8; text-align: center; font: 750 10px var(--display, sans-serif); }
+#player-choice-dialog .choice-stat-column { text-align: center; color: #33557f; font-size: 12px; }
+#player-choice-dialog .choice-primary-stat { color: #0f51cd; font-weight: 850; font-size: 14px; }
+#player-choice-dialog .choice-player-row[data-available="true"] { cursor: pointer; }
+#player-choice-dialog .choice-player-row:nth-child(even) { background: #f6f9ff; }
+#player-choice-dialog .choice-player-row[data-recommended="true"] { background: #e7fbf0; }
+#player-choice-dialog .choice-player-row[data-selected="true"] { background: #e6eeff; }
+#player-choice-dialog .choice-player-row[data-available="true"]:hover, #player-choice-dialog .choice-player-row:focus-within { background: #deebff; }
+#player-choice-dialog .player-choice-card { display: flex; flex-direction: column; justify-content: center; width: 100%; min-height: 40px; padding: 4px 2px; border: 0; border-radius: 4px; background: transparent; color: #143c76; text-align: left; box-shadow: none; transform: none; }
+#player-choice-dialog .player-choice-card:hover:not(:disabled) { background: transparent; color: #0d50d9; border: 0; transform: none; }
+#player-choice-dialog .player-choice-card:disabled { opacity: 1; color: #6f83a1; cursor: default; }
+#player-choice-dialog .player-choice-card:focus-visible { outline: 2px solid #1460f2; outline-offset: 2px; }
+#player-choice-dialog .choice-player-name { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; line-height: 1.2; }
+#player-choice-dialog .choice-player-name strong { color: inherit; font-size: 13px; font-weight: 800; overflow-wrap: anywhere; }
+#player-choice-dialog .player-choice-card .choice-player-style { display: block; margin-top: 3px; color: #6b84a7; font-size: 8px; line-height: 1.35; font-weight: 500; overflow-wrap: anywhere; }
+#player-choice-dialog .choice-badges { display: inline-flex; gap: 3px; }
+#player-choice-dialog .choice-badges span { display: inline-block; padding: 2px 3px; border-radius: 3px; background: #e2ecff; color: #1c59bb; font-size: 7px; font-weight: 850; }
+#player-choice-dialog .choice-status { color: #117551; font-size: 8px; font-weight: 850; letter-spacing: .025em; line-height: 1.5; }
+#player-choice-dialog .choice-player-row[data-recommended="true"] .choice-status { color: #098354; }
+#player-choice-dialog .choice-player-row[data-selected="true"] .choice-status { color: #1c5bce; }
+#player-choice-dialog .choice-player-row[data-available="false"]:not([data-selected="true"]) .choice-status { color: #8a6e82; }
+#player-choice-dialog .choice-select-arrow { margin-left: 5px; color: #1965ed; font-size: 16px; font-weight: 800; }
+#player-choice-dialog .choice-energy { width: 47px; text-align: center; }
+#player-choice-dialog .choice-energy small { display: block; color: #178d66; font-size: 8px; font-weight: 750; }
+#player-choice-dialog .choice-energy-bar { display: block; height: 3px; margin: 4px 5px; border-radius: 3px; background: #dcf0e9; overflow: hidden; }
+#player-choice-dialog .choice-energy-bar i { display: block; height: 100%; background: #13c68a; }
+#player-choice-dialog .choice-opponent-list { list-style: none; margin: 0; padding: 0; }
+#player-choice-dialog .choice-opponent-list li { display: flex; align-items: center; gap: 8px; min-height: 47px; padding: 7px 10px; border-bottom: 1px solid #e4ecf9; }
+#player-choice-dialog .choice-opponent-list li:nth-child(even) { background: #fff6fa; }
+#player-choice-dialog .choice-opponent-list li:last-child { border-bottom: 0; }
+#player-choice-dialog .choice-opponent-list .choice-order { width: 19px; flex-shrink: 0; }
+#player-choice-dialog .choice-opponent-identity { display: grid; flex: 1; min-width: 0; gap: 3px; }
+#player-choice-dialog .choice-opponent-identity strong { font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+#player-choice-dialog .choice-opponent-identity small { font-size: 8px; color: #8092ae; overflow-wrap: anywhere; }
+#player-choice-dialog .choice-opponent-list .choice-badges span { background: #ffe2ed; color: #b62b5b; }
+#player-choice-dialog .player-choice-actions { position: sticky; bottom: 0; display: flex; align-items: center; gap: 18px; justify-content: space-between; padding: 15px 28px; border-top: 1px solid #d2e1f6; background: #ffffffed; backdrop-filter: blur(8px); }
+#player-choice-dialog .choice-footnote { max-width: 390px; color: #6e85a6; font-size: 10px; line-height: 1.6; }
+#player-choice-dialog .player-choice-actions .secondary { min-height: 39px; padding: 10px 16px; border: 1px solid #b6cff5; border-radius: 8px; background: #e8f1ff; color: #1d54ac; font-size: 11px; font-weight: 800; }
+#player-choice-dialog .player-choice-actions .secondary:hover { background: #d9e9ff; }
+@media (min-width: 900px) and (min-height: 800px) {
+  #player-choice-dialog .player-choice-heading { padding: 18px 24px 15px; }
+  #player-choice-dialog h2 { margin: 5px 0; font-size: 32px; }
+  #player-choice-dialog .player-choice-detail { font-size: 11px; line-height: 1.4; }
+  #player-choice-dialog .choice-league-mark { width: 56px; height: 58px; font-size: 23px; }
+  #player-choice-dialog .choice-matchbar { padding: 13px 24px; }
+  #player-choice-dialog .choice-match-score > strong { font-size: 28px; }
+  #player-choice-dialog .choice-partnership { padding: 12px 24px 0; }
+  #player-choice-dialog .choice-partnership-step { padding: 8px 11px; }
+  #player-choice-dialog .choice-boards { padding: 15px 24px; }
+  #player-choice-dialog .choice-board-header { padding: 11px 15px; }
+  #player-choice-dialog .choice-score-table th { height: 31px; }
+  #player-choice-dialog .choice-score-table td { height: 42px; }
+  #player-choice-dialog .player-choice-card { min-height: 34px; padding-block: 3px; }
+  #player-choice-dialog .choice-opponent-list li { min-height: 42px; padding-block: 5px; }
+  #player-choice-dialog .player-choice-actions { padding: 12px 24px; }
+}
+@media (max-width: 850px) {
+  #player-choice-dialog .choice-boards.has-opponent { grid-template-columns: 1fr; }
+  #player-choice-dialog .choice-opponent-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #player-choice-dialog .choice-opponent-list li { border-right: 1px solid #e4ecf9; }
+  #player-choice-dialog .choice-opponent-list li:nth-child(even) { background: #fff; }
+}
+@media (max-width: 550px) {
+  #player-choice-dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 14px; }
+  #player-choice-dialog .player-choice-heading { padding: 19px 16px 16px; gap: 10px; }
+  #player-choice-dialog h2 { font-size: 28px; }
+  #player-choice-dialog .player-choice-kicker { font-size: 7px; letter-spacing: .1em; }
+  #player-choice-dialog .player-choice-detail { font-size: 10px; }
+  #player-choice-dialog .choice-league-mark { width: 43px; height: 48px; font-size: 19px; border-radius: 9px; }
+  #player-choice-dialog .choice-matchbar { padding: 13px 16px; gap: 10px; }
+  #player-choice-dialog .choice-matchup { gap: 7px; }
+  #player-choice-dialog .choice-matchup strong { font-size: 14px; }
+  #player-choice-dialog .choice-matchup > span { font-size: 11px; }
+  #player-choice-dialog .choice-match-score { display: grid; gap: 3px; text-align: right; }
+  #player-choice-dialog .choice-match-score > strong { font-size: 25px; }
+  #player-choice-dialog .choice-match-score small { max-width: 110px; font-size: 7px; }
+  #player-choice-dialog .choice-partnership { padding: 12px 12px 0; gap: 7px; }
+  #player-choice-dialog .choice-partnership-step { gap: 6px; padding: 8px; font-size: 8px; }
+  #player-choice-dialog .choice-partnership-step b { width: 20px; height: 20px; flex-shrink: 0; font-size: 10px; }
+  #player-choice-dialog .choice-boards { padding: 13px 10px; gap: 13px; }
+  #player-choice-dialog .choice-board-header { padding: 11px 10px; }
+  #player-choice-dialog .choice-board-header strong { font-size: 9px; }
+  #player-choice-dialog .choice-board-header > span { font-size: 7px; }
+  #player-choice-dialog .choice-score-table .choice-player-column { width: 39%; }
+  #player-choice-dialog .choice-score-table .choice-status-column { width: 80px; padding-right: 6px; }
+  #player-choice-dialog .choice-score-table th { font-size: 7px; }
+  #player-choice-dialog .choice-score-table th:first-child { width: 24px; }
+  #player-choice-dialog .choice-score-table td { height: 49px; }
+  #player-choice-dialog .choice-player-name strong { font-size: 12px; }
+  #player-choice-dialog .player-choice-card .choice-player-style { font-size: 7px; }
+  #player-choice-dialog .choice-stat-column { font-size: 10px; }
+  #player-choice-dialog .choice-primary-stat { font-size: 12px; }
+  #player-choice-dialog .choice-status { font-size: 8px; letter-spacing: 0; }
+  #player-choice-dialog .choice-select-arrow { font-size: 13px; margin-left: 3px; }
+  #player-choice-dialog .choice-energy small { font-size: 7px; }
+  #player-choice-dialog .choice-score-table .choice-secondary-stat { display: none; }
+  #player-choice-dialog .choice-opponent-list li { padding: 7px; gap: 6px; }
+  #player-choice-dialog .choice-opponent-identity strong { font-size: 11px; }
+  #player-choice-dialog .choice-opponent-identity small { font-size: 8px; }
+  #player-choice-dialog .player-choice-actions { padding: 12px; gap: 10px; }
+  #player-choice-dialog .choice-footnote { font-size: 8px; }
+  #player-choice-dialog .player-choice-actions .secondary { min-height: 38px; padding: 9px 11px; font-size: 9px; flex-shrink: 0; }
+}
+@media (max-height: 550px) and (min-width: 551px) {
+  #player-choice-dialog .player-choice-heading { padding-block: 13px; }
+  #player-choice-dialog h2 { font-size: 27px; }
+  #player-choice-dialog .choice-league-mark { width: 48px; height: 48px; font-size: 22px; }
+  #player-choice-dialog .choice-matchbar { padding-block: 10px; }
+  #player-choice-dialog .choice-boards { padding-block: 13px; }
+}

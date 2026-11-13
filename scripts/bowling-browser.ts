@@ -30,9 +30,13 @@ async function startBowling(page:Page) {
 }
 async function bowl(page:Page, index:number) {
   await page.clock.runFor(32)
-  await page.locator('#bowl-execute').click(); await page.clock.runFor(650); await page.locator('#bowl-execute').click()
-  const configured=await state(page); assert.ok(configured.execution); assert.equal(configured.phase,'windup')
+  await page.locator('#bowl-execute').click()
+  assert.equal((await state(page)).phase, 'windup', 'first press starts the actual run-up')
   if(index===0) { await page.clock.runFor(1400); await capture(page,'06-fast-runup') }
+  await page.clock.runFor(Math.max(0, 2760 - (await state(page)).windup * 1000))
+  await page.locator('#bowl-execute').click()
+  const configured=await state(page); assert.ok(configured.execution); assert.equal(configured.phase,'windup')
+  assert.ok(configured.execution.release>=.95, 'release near the crease earns perfect timing')
   const release=await until(page,s=>s.phase==='flight','release',16)
   assert.ok(release.release); assert.equal(release.release.position.x, release.execution!.arm==='right' ? (release.execution!.side==='over'?.48:-.92) : (release.execution!.side==='over'?-.48:.92))
   if(index===0) await capture(page,'07-fast-release')

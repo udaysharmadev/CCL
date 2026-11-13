@@ -5,6 +5,7 @@
   "type": "module",
   "engines": { "node": ">=22.18.0" },
   "scripts": {
+    "test:design": "node scripts/design-browser.ts",
     "test:bowling": "node scripts/bowling-browser.ts",
     "test:bowling-animation": "node scripts/bowling-animation-browser.ts",
     "test:bowling-presentation": "node scripts/bowling-presentation-browser.ts",

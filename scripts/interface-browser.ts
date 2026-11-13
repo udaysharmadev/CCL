@@ -57,6 +57,11 @@ async function dialogFits(page: Page, selector: string) {
 }
 
 async function backToHome(page: Page) {
+  if (await page.locator('#player-choice-dialog').evaluate(node => node instanceof HTMLDialogElement && node.open)) {
+    await page.locator('#player-choice-dialog').getByRole('button', { name: 'Return to stadium', exact: true }).click()
+    await page.locator('#game[data-view="home"]').waitFor()
+    return
+  }
   await page.locator('#pause-button').click()
   await page.getByRole('button', { name: 'Return to stadium', exact: true }).click()
   await page.locator('#game[data-view="home"]').waitFor()
@@ -190,6 +195,7 @@ try {
   }
   await page.locator('#setup-dialog button[type="submit"]').click()
   await page.locator('#game[data-view="solo"]').waitFor()
+  await page.locator('#player-choice-dialog [data-player-id="Khan"]').click()
   assert.match(await page.locator('#overs-limit').textContent() ?? '', /20 OV/)
   assert.match(await page.locator('#match-id').textContent() ?? '', /HARBOR REACH/)
   assert.ok(await page.locator('#stadium').isVisible(), '3D stadium returns in a match')

@@ -25,10 +25,23 @@ export type BowlingMotion = {
   twist: number
   armArc: number
   wrist: number
+  armCircle: number
+  recovery: number
+  rearSweep: number
 }
 
 const clamp = (n: number) => Math.max(0, Math.min(1, n))
 const ease = (n: number) => { const x = clamp(n); return x * x * (3 - 2 * x) }
+
+/** Integral of an eased speed ramp: accelerate, travel, then brake into the crease.
+ * A distance-based stride keeps the shoes in step with the approach at any FPS. */
+function approachDistance(progress: number) {
+  const x = clamp((progress - .035) / .965), acceleration = .18, braking = .14
+  const total = 1 - (acceleration + braking) / 2
+  if (x < acceleration) { const u = x / acceleration; return acceleration * (u ** 3 - u ** 4 / 2) / total }
+  if (x > 1 - braking) { const u = (1 - x) / braking; return 1 - braking * (u ** 3 - u ** 4 / 2) / total }
+  return (x - acceleration / 2) / total
+}
 
 export function isSpinAction(type: string) {
   return ['off-spin', 'leg-spin', 'left-arm-orthodox', 'left-arm-wrist-spin'].includes(type)
@@ -46,14 +59,15 @@ export function sampleBowlingMotion(profile: BowlingAppearance, phase: string, p
   const p = clamp(progress)
   const running = phase === 'windup'
   const following = phase === 'flight' || phase === 'field'
-  const approach = running ? ease((p - .035) / .84) : following || phase === 'dead' ? 1 : 0
-  const gather = running ? ease((p - .62) / .16) * (1 - ease((p - .84) / .13)) : 0
-  const plant = running ? ease((p - .81) / .14) : following ? 1 - ease(releaseAge / .48) : 0
-  const releaseBlend = running ? ease((p - .87) / .13) : following ? 1 - ease(releaseAge / .32) : 0
-  const follow = following ? ease(releaseAge / .46) : 0
-  const recover = following ? ease((releaseAge - .38) / .8) : phase === 'dead' ? 1 : 0
+  const approach = running ? approachDistance(p) : following || phase === 'dead' ? 1 : 0
+  const gather = running ? ease((p - .60) / .14) * (1 - ease((p - .81) / .15)) : 0
+  const plant = running ? ease((p - .80) / .16) : following ? 1 - ease((releaseAge - .12) / .50) : 0
+  const releaseBlend = running ? ease((p - .89) / .11) : following ? 1 - ease(releaseAge / .28) : 0
+  const follow = following ? ease(releaseAge / .66) : 0
+  const recover = following ? ease((releaseAge - .48) / .86) : phase === 'dead' ? 1 : 0
   const returnProgress = phase === 'dead' ? ease((releaseAge - .55) / 2.65) : 0
-  const runAmount = running ? Math.sin(approach * Math.PI) * (spin ? .40 : .82) + .18 * approach * (1 - plant)
+  const followDistance = spin ? 1.0 : 2.45
+  const runAmount = running ? ease((p - .04) / .19) * (1 - ease((p - .63) / .30)) * (spin ? .43 : .86)
     : phase === 'dead' ? Math.sin(returnProgress * Math.PI) * .34 : 0
   const actionTwist = wristSpin ? .69 : profile.action === 'side-on' ? .57 : profile.action === 'sling' ? .43 : .30
   return {
@@ -63,12 +77,18 @@ export function sampleBowlingMotion(profile: BowlingAppearance, phase: string, p
     armIndex: profile.arm === 'left' ? 1 : 0,
     frontFootIndex: profile.arm === 'left' ? 0 : 1,
     runDistance,
-    distanceRemaining: phase === 'dead' ? -(spin ? .72 : 1.42) + (runDistance + (spin ? .72 : 1.42)) * returnProgress
-      : (1 - approach) * runDistance - (following ? (spin ? .72 : 1.42) * ease(releaseAge / .85) : 0),
-    stride: phase === 'dead' ? returnProgress * (runDistance + 1.42) * 4.4 : approach * runDistance * (spin ? 4.5 : 3.4), runAmount, gather, plant, releaseBlend, follow,
-    lean: (spin ? .04 : .11) * approach + (following ? Math.sin(follow * Math.PI) * .39 * (1 - recover) : 0),
+    distanceRemaining: phase === 'dead' ? -followDistance + (runDistance + followDistance) * returnProgress
+      : (1 - approach) * runDistance - (following ? followDistance * ease(releaseAge / 1.18) : 0),
+    stride: phase === 'dead' ? returnProgress * (runDistance + followDistance) * 4.4
+      : approach * runDistance * (spin ? 4.5 : 3.4) + (following ? followDistance * ease(releaseAge / 1.18) * 3.4 : 0),
+    runAmount, gather, plant, releaseBlend, follow,
+    lean: (spin ? .04 : .11) * approach * (1 - recover) + gather * (spin ? .025 : .07)
+      + (following ? Math.sin(follow * Math.PI) * (spin ? .19 : .43) * (1 - recover) : 0),
     twist: side * (gather * actionTwist - releaseBlend * .10 - (following ? Math.sin(follow * Math.PI) * .27 * (1 - recover) : 0)),
     armArc: side * (profile.action === 'sling' ? .88 : wristSpin ? .58 : profile.action === 'finger-spin' ? .35 : .14),
     wrist: side * (wristSpin ? -.70 : spin ? .30 : profile.action === 'sling' ? -.20 : .08),
+    armCircle: running ? ease((p - .68) / .32) : following ? 1 + follow : 0,
+    recovery: recover,
+    rearSweep: following ? Math.sin(follow * Math.PI) * (1 - recover) : 0,
   }
 }

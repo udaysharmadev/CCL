@@ -1,6 +1,7 @@
-import { availableVariations, type BowlingControls, type BowlingVariation } from './bowling.ts'
+import { BOWLING_VARIATIONS, availableVariations, type BowlingControls, type BowlingVariation } from './bowling.ts'
 import { bowlingLabel, isSpinBowler, type PlayerProfile } from './player-profile.ts'
 import { formatOvers, type Innings } from './rules.ts'
+import { releaseTiming } from './bowling-timing.ts'
 
 const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n))
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = '') {
@@ -16,7 +17,10 @@ export function createBowlingHud(parent: HTMLElement, execute: () => void, chang
   copy.append(name, style); identity.append(avatar, copy, figures)
   const change = node('button', 'bowler-change', 'Change bowler'); change.type = 'button'; change.addEventListener('click', changeBowler)
   identity.append(change)
-  const stages = node('div', 'bowling-stages', '01 PREPARE   /   02 TARGET   /   03 EXECUTE')
+  const stages = node('div', 'bowling-stages')
+  for (const [number, label] of [['01', 'Pick delivery'], ['02', 'Aim on pitch'], ['03', 'Time release']]) {
+    const step = node('span'); step.append(node('b', '', number), node('span', '', label)); stages.append(step)
+  }
   const body = node('div', 'bowling-body'), left = node('div', 'bowling-plan'), right = node('div', 'bowling-target')
   const variations = node('div', 'bowling-variations'); variations.setAttribute('aria-label', 'Available deliveries')
   const description = node('p', 'variation-description')
@@ -43,16 +47,27 @@ export function createBowlingHud(parent: HTMLElement, execute: () => void, chang
   const stumps = node('span', 'pitch-stumps', 'III'), marker = node('i', 'pitch-marker'), actual = node('i', 'pitch-actual')
   actual.hidden = true; pitch.append(stumps, marker, actual)
   const lineLegend = node('div', 'pitch-line-legend', 'LEG     MIDDLE     OFF')
-  const hint = node('small', 'pitch-hint', 'Drag target · arrow keys fine tune')
+  const hint = node('small', 'pitch-hint', 'Tap or drag to aim')
+  const lengths = node('div', 'bowling-lengths'); lengths.setAttribute('aria-label', 'Quick bowling length')
+  const lengthButtons = [['Yorker', 1.3], ['Full', 3.2], ['Good', 6.2], ['Short', 9.2], ['Bouncer', 11.4]].map(([label, value]) => {
+    const b = node('button', '', String(label)); b.type = 'button'; b.dataset.length = String(value)
+    b.addEventListener('click', () => { controls.length = Number(value); actual.hidden = true; feedback = ''; update(); changed() })
+    lengths.append(b); return b
+  })
   right.append(targetLabel, targetText, pitch, lineLegend, hint)
+  left.append(lengths)
   const foot = node('footer', 'bowling-execution'), status = node('div', 'bowling-execution-status')
   status.setAttribute('role', 'status')
   const meter = node('div', 'release-meter'); meter.id = 'release-meter'; meter.hidden = true
-  meter.setAttribute('aria-label', 'Release timing. Stop in the gold center.')
-  const needle = node('i'); meter.append(needle)
-  const button = node('button', 'primary', 'Set release'); button.id = 'bowl-execute'; button.type = 'button'; button.addEventListener('click', execute)
-  foot.append(status, meter, button); body.append(left, right); root.append(identity, stages, body, foot); parent.append(root)
-  let profile: PlayerProfile | undefined, innings: Innings | undefined, locked = false, canChange = true, timing = false, age = 0
+  meter.setAttribute('role', 'meter'); meter.setAttribute('aria-valuemin', '0'); meter.setAttribute('aria-valuemax', '100')
+  meter.setAttribute('aria-label', 'Run-up release timing. Release in the green zone near the end.')
+  const needle = node('i'), zone = node('span', 'release-perfect-zone'); meter.append(zone, needle)
+  const meterLegend = node('div', 'release-legend'); meterLegend.hidden = true
+  meterLegend.append(node('span', '', 'RUN-UP'), node('b', '', 'RELEASE ZONE'))
+  const button = node('button', 'primary', 'Start run-up'); button.id = 'bowl-execute'; button.type = 'button'; button.addEventListener('click', execute)
+  const shortcut = node('kbd', 'bowling-shortcut', 'SPACE')
+  foot.append(status, meter, meterLegend, button, shortcut); body.append(left, right); root.append(identity, stages, body, foot); parent.append(root)
+  let profile: PlayerProfile | undefined, innings: Innings | undefined, locked = false, canChange = true, timing = false, age = 0, duration = 3
   let controls: BowlingControls = { variation: 'stock', line: .18, length: 6.2, power: .76, release: .7, movement: .65, side: 'over', batterHand: 'right' }
   let feedback = '', signature = ''
   function targetAt(event: PointerEvent) {
@@ -102,19 +117,23 @@ export function createBowlingHud(parent: HTMLElement, execute: () => void, chang
     power.input.disabled = movement.input.disabled = locked || timing
     power.caption.firstChild!.textContent = spin ? 'Delivery pace ' : 'Pace effort '
     power.input.setAttribute('aria-label', spin ? 'Spin delivery pace' : 'Pace effort')
-    power.output.textContent = `${Math.round(controls.power * 100)}%`
+    const pace = b.maxPace * (spin ? .69 + controls.power * .28 : .78 + controls.power * .22)
+      * BOWLING_VARIATIONS[controls.variation].speed * (.91 + stamina / 100 * .09)
+    power.output.textContent = `~${Math.round(pace)} km/h`
     movement.caption.firstChild!.textContent = spin ? 'Revolutions / flight ' : 'Swing / seam '
     movement.input.setAttribute('aria-label', spin ? 'Revolutions and flight' : 'Swing and seam')
     movement.output.textContent = `${Math.round(controls.movement * 100)}%`
     const line = Math.abs(controls.line) < .14 ? 'Middle' : controls.line < -.9 ? 'Outside leg' : controls.line < -.32 ? 'Leg' : controls.line > .95 ? 'Wide off' : controls.line > .42 ? 'Outside off' : 'Off stump'
     const length = controls.length < 1.8 ? 'Yorker' : controls.length < 4.2 ? 'Full' : controls.length < 7.4 ? 'Good' : controls.length < 10 ? 'Short' : 'Bouncer'
+    lengthButtons.forEach(b => { b.disabled = locked || timing; b.setAttribute('aria-pressed', String(b.textContent === length)) })
     targetText.textContent = `${line} · ${length}`
     pitch.setAttribute('aria-description', `${line}, ${length}, ${controls.length.toFixed(1)} metres from stumps. ${controls.batterHand}-handed batter.`)
     marker.style.left = `${(controls.line + 1.4) / 2.8 * 100}%`; marker.style.top = `${(12.5 - controls.length) / 11.9 * 100}%`
-    status.textContent = timing ? 'Stop in the gold zone · SPACE or tap' : feedback || `${spin ? 'SPIN LAB' : 'PACE ATTACK'} · ${controls.batterHand === 'left' ? 'LHB' : 'RHB'} facing · aim, then set release`
-    meter.hidden = !timing
-    button.disabled = locked
-    button.textContent = timing ? 'Release now' : 'Set release'
+    status.textContent = timing ? 'Watch the run-up. Tap in the green zone.' : feedback || `Aim your ${options.find(v => v.id === controls.variation)?.label.toLowerCase() ?? 'delivery'}, then start your run-up.`
+    meter.hidden = meterLegend.hidden = !timing
+    button.disabled = locked && !timing
+    button.textContent = timing ? 'Release ball →' : locked ? 'Ball in play' : 'Start run-up →'
+    shortcut.hidden = locked && !timing
     pitch.classList.toggle('locked', locked || timing)
   }
   return {
@@ -125,10 +144,22 @@ export function createBowlingHud(parent: HTMLElement, execute: () => void, chang
       if (profile?.id !== p.id) { controls.variation = availableVariations(p).find(v => !v.locked)?.id ?? 'stock'; controls.length = availableVariations(p).find(v => !v.locked)?.defaultLength ?? 6.2; feedback = ''; actual.hidden = true }
       profile = p; innings = state; controls.batterHand = hand; locked = disabled; canChange = allowChange; update()
     },
-    startTiming() { if (locked || !profile) return; timing = true; age = 0; feedback = ''; actual.hidden = true; update() },
-    finishTiming() { const position = (1 - Math.cos(age * Math.PI / 1.3)) / 2; controls.release = Math.round(clamp(1 - Math.abs(position - .5) * 2, 0, 1) * 1000) / 1000; timing = false; update(); return controls.release },
-    advance(dt: number) { if (timing) { age += dt; needle.style.left = `${(1 - Math.cos(age * Math.PI / 1.3)) * 50}%` } },
-    reset() { timing = false; feedback = ''; profile = undefined; signature = ''; root.hidden = true },
+    startTiming(seconds = 3) { if (locked || !profile || timing) return false; timing = true; age = 0; duration = seconds; feedback = ''; actual.hidden = true; delete root.dataset.release; needle.style.left = '0%'; meter.setAttribute('aria-valuenow', '0'); update(); return true },
+    finishTiming(missed = false) {
+      const result = releaseTiming(age / duration, missed)
+      controls.release = result.quality; timing = false; feedback = `${result.label} · ${Math.round(result.quality * 100)}% timing`
+      root.dataset.release = result.label.startsWith('PERFECT') ? 'perfect' : result.label.startsWith('GOOD') ? 'good' : 'miss'
+      update(); return controls.release
+    },
+    advance(dt: number) {
+      if (!timing) return
+      age += dt; const progress = clamp(age / duration, 0, 1)
+      needle.style.left = `${progress * 100}%`; meter.setAttribute('aria-valuenow', String(Math.round(progress * 100)))
+      const cue = progress >= .88 && progress <= .96 ? 'RELEASE NOW · tap or press Space' : progress > .96 ? 'LATE · release before the run-up ends' : progress >= .7 ? 'Get ready · release in the green zone' : 'Watch the run-up. Tap in the green zone.'
+      root.dataset.releaseCue = progress >= .88 && progress <= .96 ? 'now' : 'wait'
+      if (status.textContent !== cue) status.textContent = cue
+    },
+    reset() { timing = false; feedback = ''; profile = undefined; signature = ''; root.hidden = true; delete root.dataset.release; delete root.dataset.releaseCue },
     feedback(message: string, point?: { x: number; z: number }) {
       feedback = message
       if (point) { actual.hidden = false; actual.style.left = `${clamp((point.x * (controls.batterHand === 'left' ? -1 : 1) + 1.4) / 2.8 * 100, 0, 100)}%`; actual.style.top = `${clamp((12.5 - point.z) / 11.9 * 100, 0, 100)}%` }

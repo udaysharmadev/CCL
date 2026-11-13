@@ -1108,7 +1108,7 @@ export function bowlingPose(rig: Rig, time: number, phase: StadiumFrame['phase']
   release: Vec3 = { x: .28, y: 2.06, z: PITCH_LENGTH - 1.83 }) {
   const motion = sampleBowlingMotion(appearance, phase, windup, releaseAge)
   const side = appearance.arm === 'left' ? 1 : -1
-  const deliveryClock = phase === 'windup' ? windup * 2.7 : releaseAge
+  const deliveryClock = phase === 'windup' ? windup * 3 : releaseAge
   const following = phase === 'flight' || phase === 'field'
   rig.base.scale.setScalar(1.28)
   rig.base.rotation.set(0, Math.PI, 0)
@@ -1120,31 +1120,54 @@ export function bowlingPose(rig: Rig, time: number, phase: StadiumFrame['phase']
   const lateralReach = Math.sqrt(Math.max(0, (.505 * 1.28) ** 2 - verticalReach ** 2 - .105 ** 2))
   rig.base.position.set(release.x + side * (.223 * 1.28 + lateralReach), 0, release.z + .12 + motion.distanceRemaining)
   runPose(rig, motion.stride / 15, motion.runAmount)
-  rig.body.position.y = .735 + motion.gather * (motion.spin ? .038 : .085)
-  rig.shoulders.rotation.set(motion.lean, motion.twist, 0)
+  const stride = Math.sin(motion.stride) * motion.runAmount
+  rig.body.position.y = .735 - motion.runAmount * .027 + Math.abs(stride) * .018
+    + motion.gather * (motion.spin ? .030 : .055) - motion.rearSweep * .035
+  rig.body.position.x = stride * .012
+  rig.shoulders.rotation.set(motion.lean, motion.twist, side * (-motion.gather * .07 + motion.rearSweep * .09))
   rig.head.rotation.set(-motion.lean * .72, -motion.twist * .76, 0)
   const arm = rig.arms[motion.armIndex]
   const guide = rig.arms[1 - motion.armIndex]
-  const arc = smooth((windup - .67) / .33)
-  if (phase === 'windup' || following && releaseAge < 1.2) {
-    const lifted = phase === 'windup' ? arc : 1 - smooth(releaseAge / .36)
-    arm.shoulder.rotation.set(-2.98 * lifted + (following ? .62 * Math.sin(motion.follow * Math.PI) : 0), 0,
-      side * .12 + motion.armArc * Math.sin(lifted * Math.PI * .84))
-    arm.elbow.rotation.set(-.36 * (1 - lifted) - (motion.wristSpin ? .31 : .04) * motion.gather, motion.wrist * motion.gather, 0)
-    guide.shoulder.rotation.set(-motion.gather * 2.24 - motion.plant * .36, 0, -side * .17)
-    guide.elbow.rotation.set(-.33 - motion.gather * .42, 0, 0)
-    const front = rig.legs[motion.frontFootIndex]
-    const rear = rig.legs[1 - motion.frontFootIndex]
-    front.hip.rotation.x = THREE.MathUtils.lerp(front.hip.rotation.x, -.51, motion.gather)
-    front.knee.rotation.x = THREE.MathUtils.lerp(front.knee.rotation.x, .81, motion.gather)
-    rear.hip.rotation.x += following ? .44 * Math.sin(motion.follow * Math.PI) : 0
-    rear.knee.rotation.x += following ? .94 * Math.sin(motion.follow * Math.PI) : 0
-    if (motion.plant > .02) {
-      const feet = [new THREE.Vector3(-.11, .065, -.16), new THREE.Vector3(.11, .065, -.16)]
-      feet[motion.frontFootIndex].z = .20
-      if (following) feet[1 - motion.frontFootIndex].y += .23 * Math.sin(motion.follow * Math.PI)
-      plantFeet(rig, feet)
-    }
+  if (phase === 'windup' || following) {
+    const action = phase === 'windup' ? smooth((windup - .55) / .17) : 1
+    const recovery = motion.recovery
+    // Positive rotation completes a real arm wheel: behind the hip, above the
+    // shoulder, through release, then down across the body. The guide arm leads
+    // the gather and pulls down into the delivery rather than rising in unison.
+    const wheel = .68 + 2.50 * motion.armCircle
+    const circle = THREE.MathUtils.lerp(wheel, Math.PI * 2 - .16, recovery)
+    arm.shoulder.rotation.set(THREE.MathUtils.lerp(arm.shoulder.rotation.x, circle, action), 0,
+      (side * .12 + motion.armArc * Math.sin(motion.armCircle * Math.PI * .84)) * action * (1 - recovery))
+    arm.elbow.rotation.set(THREE.MathUtils.lerp(arm.elbow.rotation.x,
+      -.38 * (1 - Math.min(1, motion.armCircle)) - (motion.wristSpin ? .31 : .04) * motion.gather
+      - motion.rearSweep * .27, action) * (1 - recovery) - recovery * .13, motion.wrist * motion.gather, 0)
+    arm.hand.rotation.set(0, motion.wrist * (motion.gather + motion.releaseBlend * .35), 0)
+    guide.shoulder.rotation.set(THREE.MathUtils.lerp(guide.shoulder.rotation.x,
+      -motion.gather * 2.68 + motion.plant * .55 + motion.rearSweep * .68, action) * (1 - recovery), 0, -side * .17)
+    guide.elbow.rotation.set(THREE.MathUtils.lerp(guide.elbow.rotation.x,
+      -.28 - motion.gather * .44 + motion.plant * .10 - motion.rearSweep * .45, action), 0, 0)
+
+    // Solve the feet through the whole approach. The planted shoe stays flat;
+    // the other lifts on its swing, then the front leg braces as the rear sweeps.
+    const feet = [new THREE.Vector3(-.11, .065, 0), new THREE.Vector3(.11, .065, 0)]
+    feet.forEach((foot, i) => {
+      const gait = i === motion.frontFootIndex ? stride : -stride
+      foot.z = gait * .23
+      foot.y += Math.max(0, gait) * .075
+      const isFront = i === motion.frontFootIndex
+      const gatheredZ = isFront ? .25 : -.13
+      foot.z = THREE.MathUtils.lerp(foot.z, gatheredZ, motion.gather)
+      foot.y += motion.gather * (isFront ? .13 : .085)
+      foot.z = THREE.MathUtils.lerp(foot.z, isFront ? .20 : -.16, motion.plant)
+      foot.y = THREE.MathUtils.lerp(foot.y, .065, motion.plant)
+      if (following) {
+        const step = smooth((releaseAge - .17) / .65)
+        foot.z += (isFront ? -.17 : .44) * step * (1 - recovery)
+        foot.y += (isFront ? .025 * step : .22) * motion.rearSweep
+        if (isFront) foot.z += motion.distanceRemaining / 1.28 * (1 - smooth((releaseAge - .12) / .20))
+      }
+    })
+    plantFeet(rig, feet)
     if (motion.releaseBlend > 0) {
       rig.base.updateWorldMatrix(true, true)
       const wrist = arm.hand.getWorldPosition(new THREE.Vector3())
@@ -1152,8 +1175,10 @@ export function bowlingPose(rig: Rig, time: number, phase: StadiumFrame['phase']
       // the hand follows its own downward arc while the ball follows physics.
       const target = new THREE.Vector3(release.x, release.y, release.z)
       if (following) {
-        target.y -= .74 * smooth(releaseAge / .32)
-        target.z -= .46 * smooth(releaseAge / .32)
+        const sweep = smooth(releaseAge / .28)
+        target.y -= .58 * sweep
+        target.z -= .45 * sweep
+        target.x += side * .24 * sweep
       }
       wrist.lerp(target, motion.releaseBlend)
       const localWrist = rig.shoulders.worldToLocal(wrist)
@@ -1164,6 +1189,7 @@ export function bowlingPose(rig: Rig, time: number, phase: StadiumFrame['phase']
       arm.elbow.quaternion.setFromUnitVectors(DOWN, localWrist.clone().sub(elbow).normalize().applyQuaternion(arm.shoulder.quaternion.clone().invert()))
     }
   } else {
+    arm.hand.rotation.set(0, 0, 0)
     if (phase === 'dead' && motion.runAmount > .01) {
       runPose(rig, motion.stride / 15, motion.runAmount)
       rig.base.rotation.y = Math.PI * (1 - smooth((releaseAge - .35) / .25) + smooth((releaseAge - 2.8) / .4))

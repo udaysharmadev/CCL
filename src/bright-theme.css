@@ -1,0 +1,364 @@
+/* Match-day colour system. Layout stays in the screen styles; this final layer
+   gives the lobby, match broadcast and every menu one clear visual language. */
+:root {
+  font-family: "Bahnschrift", "Segoe UI", Arial, sans-serif;
+  color: #fff;
+  background: #eef5ff;
+  --ink: #08235b;
+  --paper: #fff;
+  --lime: #d2ff38;
+  --yellow: #d2ff38;
+  --gold: #ffe34b;
+  --mint: #37e5e1;
+  --muted: #b9d6ff;
+  --dim: #c6e0ff;
+  --rule: #b7d6ff40;
+  --glass: #093ebbf2;
+  --blue: #1253e9;
+  --cyan: #29ddf3;
+  --orange: #ff6c39;
+  --text: #112b5c;
+  --text-soft: #536a8b;
+  --line: #d5e3f8;
+  --display: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+}
+button, input, select { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, input:focus-visible, select:focus-visible,
+[tabindex]:focus-visible { outline: 3px solid #12bcdf; outline-offset: 3px; }
+button { transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.primary, .secondary, .utility, .choice { border-radius: 8px; }
+.primary { background: #d2ff38; color: #08235b; border-color: #d2ff38; font-style: normal; }
+.primary:hover:not(:disabled) { background: #e2ff79; border-color: #e2ff79; }
+.secondary, .choice { color: #fff; background: #1555cd; border-color: #77b0ff70; }
+.secondary:hover:not(:disabled), .choice:hover:not(:disabled) { background: #226eea; border-color: #54e5f5; }
+.choice[aria-pressed="true"] { background: #d2ff38; color: #08235b; border-color: #d2ff38; }
+.utility { color: #fff; background: #104cc6; border-color: #6fa5f966; }
+.eyebrow { color: #1253e9; }
+
+/* Bright, stadium-inspired lobby. */
+.game[data-view="home"] {
+  background: radial-gradient(ellipse at 12% 85%, #b9edff80, transparent 58%),
+    repeating-linear-gradient(125deg, transparent 0 140px, #1253e904 140px 230px), #f1f6ff;
+}
+.game[data-view="home"] .topbar {
+  background: linear-gradient(110deg, #103cc1, #125af0 62%, #1488f2);
+  border-bottom: 3px solid #34e2f4;
+  box-shadow: 0 5px 22px #1047c11a;
+}
+.game[data-view="home"] .brand { color: #fff; }
+.game[data-view="home"] .brand strong { color: #d2ff38; }
+.game[data-view="home"] .player-profile { border-color: #ffffff42; }
+.player-profile small { color: #c5e1ff; }
+.player-emblem { color: #0940b6; background: #d2ff38; }
+.home-utilities button { border-color: #ffffff4d; color: #fff; background: #ffffff10; border-radius: 6px; }
+.home-utilities button > span { color: #d2ff38; }
+.home-utilities button:hover:not(:disabled) { color: #08235b; background: #d2ff38; border-color: #d2ff38; }
+.home-utilities button:hover > span { color: #08235b; }
+.game[data-view="home"] .wallet, .game[data-view="home"] .utility {
+  color: #fff; border-color: #ffffff48; background: #07379b50; border-radius: 6px;
+}
+.game[data-view="home"] .wallet { color: #fff7b5; }
+.game[data-view="home"] .utility:hover { background: #1c70e9; }
+.lobby-heading { border-color: #cbdcf2; }
+.home h1 { color: #112b5c; border-color: #1253e9; font-weight: 900; }
+.home h1 > span { color: #1253e9; }
+.lobby-heading > span { color: #536a8b; font-weight: 750; }
+.lobby-heading > b { color: #697fa1; }
+.quick-play-panel {
+  border: 1px solid #3773f5; border-top: 4px solid #35e0f4; border-radius: 14px;
+  background: radial-gradient(ellipse at 84% 30%, #21b9f8a6, transparent 65%),
+    linear-gradient(145deg, #165aed, #1646d0 56%, #073baf);
+  box-shadow: 0 9px 24px #1852bb18;
+}
+.quick-play-panel::before { border-color: #49eaff28; box-shadow: 0 70px #49eaff0c; }
+.game-label { color: #fff; background: #06339966; border-color: #d2ff38; border-radius: 3px; }
+.quick-play-heading h2 { color: #fff; text-shadow: 0 3px 16px #073fa46b; }
+.quick-play-heading em { color: #d2ff38; }
+.hero-watermark { color: #7fdbff14; }
+.cricket-graphic { filter: drop-shadow(0 12px 12px #06247835); }
+.quick-play-bottom { background: linear-gradient(transparent, #063aaff2 38%, #073cae); }
+.quick-matchup { color: #fff; }
+.quick-matchup i { color: #38e6f4; }
+#home-match-details { color: #c4e5ff; }
+.quick-play-bottom .primary {
+  color: #08235b; border: 1px solid #e1ff77; border-bottom: 4px solid #a8d713; border-radius: 7px;
+  background: linear-gradient(100deg, #e0ff65, #c5fb20); box-shadow: 0 4px 20px #b9ec251c;
+}
+.quick-play-bottom .primary:hover:not(:disabled) { background: #e6ff86; box-shadow: 0 5px 24px #d2ff383d; }
+.mode-link { border: 1px solid #ffffff65; border-bottom: 3px solid #28d6f2; border-radius: 12px; box-shadow: 0 5px 16px #214daf14; }
+.mode-link::before { background: linear-gradient(90deg, #072c7040, transparent 88%), linear-gradient(0deg, #072961bd, #0829710d 66%, transparent 88%); }
+.mode-link:hover:not(:disabled) { transform: translateY(-3px); border-color: #36dcea; box-shadow: 0 8px 22px #1b5ac42b; }
+.mode-tag { color: #fff; background: #061d4f52; border-color: #d2ff38; border-radius: 3px; }
+.mode-link b { color: #fff; text-shadow: 0 2px 6px #09388d44; }
+.mode-link small { color: #e6f5ff; }
+.mode-link i { color: #fff; }
+#setup-button { background-color: #1174e8; border-bottom-color: #3ce7ef; }
+#lineup-button { background-color: #7a3fee; border-bottom-color: #c9b2ff; }
+#six-button { background-color: #ff783b; border-bottom-color: #ffd54e; }
+#online-button { background-color: #098cb9; border-bottom-color: #41f0e3; }
+#six-button .mode-tag { border-color: #ffe34b; }
+#online-button .mode-tag { border-color: #40f5df; }
+.training-tile {
+  color: #112b5c; border: 1px solid #c4d9f5; border-left: 4px solid #1253e9; border-radius: 10px;
+  background: linear-gradient(100deg, #fff, #e1f5ff); box-shadow: 0 4px 15px #1c5bc80a;
+}
+.training-tile:hover:not(:disabled) { background: #fff; border-color: #1383ee; }
+.training-icon { color: #1253e9; }
+.training-tile b { color: #112b5c; }
+.training-tile small { color: #536a8b; }
+.training-cta { color: #1253e9; }
+.venue { border-color: #ccddf5; background: #fff; }
+.venue strong { color: #203e72; }
+.venue span { color: #61799b; }
+.venue .ground-dot { background: #1253e9; border-radius: 50%; }
+.venue .footer-seam { color: #1253e9; }
+.career-summary { color: #536a8b; }
+.home .loading { background: #1253e9; color: #fff; border-radius: 5px; }
+
+/* White equipment menus with vivid team bands and clear form controls. */
+.overlay, #setup-dialog, #lineup-dialog {
+  color-scheme: light; color: #112b5c; background: #f8fbff;
+  border: 1px solid #d1dff5; border-top: 4px solid #1253e9; border-radius: 14px;
+  box-shadow: 0 25px 100px #06275b55; scrollbar-color: #82aaf1 #eef4ff;
+}
+.overlay::backdrop, .player-editor::backdrop, .squad-comparison::backdrop { background: #041b5799; backdrop-filter: blur(7px); }
+.overlay h2, #setup-dialog h2, #lineup-dialog h2 { color: #112b5c; font-weight: 850; }
+.overlay > .eyebrow, .overlay .eyebrow { color: #1253e9; }
+.overlay-text, .settings-note { color: #536a8b; }
+.overlay .primary { color: #fff; background: #1253e9; border-color: #1253e9; font-style: normal; }
+.overlay .primary:hover:not(:disabled) { color: #fff; background: #2670f6; border-color: #2670f6; }
+.overlay .secondary, .overlay .choice { color: #17458f; background: #edf4ff; border-color: #c0d5f3; font-style: normal; }
+.overlay .secondary:hover:not(:disabled), .overlay .choice:hover:not(:disabled) { color: #103dc6; background: #e0edff; border-color: #7caafa; }
+.overlay select, .overlay input:not([type="checkbox"]):not([type="range"]), .overlay .invite-link {
+  color: #173463; background: #fff; border-color: #bcd1ef; border-radius: 6px;
+}
+.overlay select option { color: #112b5c; background: #fff; }
+.overlay .bank { color: #536a8b; background: #edf4ff; border-radius: 6px; }
+.overlay .setup-form label, .overlay .online-field { color: #536a8b; }
+.overlay-scores > div { color: #fff; background: #1253e9; border-color: #29ddf3; border-radius: 8px; }
+.overlay-scores > div:nth-child(2) { background: #e65023; border-color: #ffe34b; }
+.overlay-scores span { color: #e3efff; }
+.overlay[data-presentation="result"] h2 { color: #1253e9; }
+.overlay[data-presentation="innings"] .overlay-scores { border-color: #d5e3f8; }
+.guide section { background: #fff; border-color: #d5e3f8; border-radius: 9px; }
+.guide h3 { color: #173463; }
+.guide h3::before { color: #1253e9; }
+.guide p { color: #536a8b; }
+.guide b { color: #173463; }
+#settings-dialog .setup-form { background: #fff; border-color: #d5e3f8; }
+#settings-dialog .setup-form label { color: #173463; border-color: #d5e3f8; }
+#settings-dialog .setting-description { color: #61799b; }
+#settings-dialog input[type="checkbox"] { background: #d6e2f5; border-color: #c3d4ee; }
+#settings-dialog input[type="checkbox"]::before { background: #fff; box-shadow: 0 1px 3px #1b3e761a; }
+#settings-dialog input[type="checkbox"]:checked { background: #1253e9; border-color: #1253e9; }
+#settings-dialog input[type="checkbox"]:checked::before { background: #fff; }
+.online-hero { background: #1253e9; border-color: #1253e9; }
+.online-hero > span { color: #d2ff38; }
+.online-hero p { color: #fff; }
+.online-hero small { color: #d1e7ff; }
+#online-dialog .online-section { border-color: #d5e3f8; }
+.online-section legend { color: #1253e9; }
+
+#setup-dialog .menu-heading, #lineup-dialog .menu-heading { border-color: #d5e3f8; }
+#setup-dialog .menu-heading .eyebrow, #lineup-dialog .menu-heading .eyebrow { color: #1253e9; }
+#setup-dialog .menu-close, #lineup-dialog .menu-close, .player-editor-heading .menu-close { color: #17458f; background: #edf4ff; border-color: #bfd3f1; border-radius: 7px; }
+#setup-dialog .menu-close:hover, #lineup-dialog .menu-close:hover { background: #dceaff; border-color: #1253e9; }
+#setup-dialog .matchup-strip { color: #fff; border: 0; border-radius: 10px; background: linear-gradient(100deg, #1253e9 0 47%, #197ae6 52%, #df4b22 100%); }
+#setup-dialog .matchup-team small { color: #fff; }
+#setup-dialog .matchup-team strong { color: #fff; }
+#setup-dialog .team-badge { color: #0c42bd; background: #d2ff38; }
+#setup-dialog .rival .team-badge { color: #fff; background: #e94b21; }
+#setup-dialog .matchup-strip > i { color: #fff; font-style: normal; }
+#setup-dialog .setup-preview { background: radial-gradient(ellipse at 80% 15%, #49d8ee99, transparent 65%), #1253e9; border-color: #377bef; border-radius: 10px; }
+#setup-dialog .setup-preview[data-venue="harbor"] { background: radial-gradient(ellipse at 80% 15%, #4eeadbaa, transparent 65%), #0087c4; }
+#setup-dialog .setup-preview[data-venue="citadel"] { background: radial-gradient(ellipse at 80% 15%, #bb8effaa, transparent 65%), #7841e9; }
+#setup-dialog .setup-preview-kicker { color: #d2ff38; }
+#setup-dialog #setup-preview-name { color: #fff; }
+#setup-dialog #setup-preview-detail, #setup-dialog #setup-preview-match { color: #d8eeff; }
+#setup-dialog #setup-format { color: #fff; background: #07399d50; border-color: #d2ff38; border-radius: 3px; }
+#setup-dialog .venue-shadow { fill: #05276f50; }
+#setup-dialog .preview-stand { fill: #174bb4; stroke: #c0e7ff; }
+#setup-dialog .preview-stand-top { fill: #b9e9ff; }
+#setup-dialog .preview-grass { fill: #39c65f; stroke: #e4ff8d; }
+#setup-dialog .venue-stripes { stroke: #a4f54b; opacity: .45; }
+#setup-dialog .preview-boundary, #setup-dialog .preview-ring { stroke: #fff; }
+#setup-dialog .preview-pitch { fill: #ecc18a; }
+#setup-dialog .preview-crease, #setup-dialog .venue-stumps { stroke: #fff; }
+#setup-dialog .venue-floodlights { stroke: #c2eaff; }
+#setup-dialog .venue-floodlights .light-bank { fill: #fffbd5; stroke: #b4dfff; }
+#setup-dialog .venue-fielders { fill: #fff; }
+#setup-dialog .setup-preview[data-venue="harbor"] .preview-stand-top { fill: #b5f4f6; }
+#setup-dialog .setup-preview[data-venue="citadel"] .preview-stand-top { fill: #e5d5ff; }
+#setup-dialog .setup-group { background: #fff; border-color: #d5e3f8; border-radius: 8px; }
+#setup-dialog .setup-group legend, #setup-dialog .setup-group legend b { color: #1253e9; }
+#setup-dialog .setup-group legend span { color: #173463; }
+#setup-dialog .setup-form label { color: #536a8b; }
+#setup-dialog .setup-form select { color: #173463; background: #f8fbff; border-color: #bed2ef; border-radius: 5px; }
+#setup-dialog .setup-form select:hover { border-color: #1253e9; }
+#setup-dialog .setup-actions, #lineup-dialog .setup-actions { background: #f8fbfff5; border-color: #d5e3f8; backdrop-filter: blur(8px); }
+#setup-dialog .setup-actions .primary, #lineup-dialog .setup-actions .primary { color: #fff; background: #1253e9; border-color: #1253e9; box-shadow: none; border-radius: 7px; font-style: normal; }
+#setup-dialog .setup-actions .primary:hover, #lineup-dialog .setup-actions .primary:hover { background: #2670f6; }
+#setup-dialog .setup-actions .secondary, #lineup-dialog .setup-actions .secondary { color: #17458f; background: #edf4ff; border-color: #bfd3f1; border-radius: 7px; font-style: normal; }
+#lineup-dialog .squad-banner { background: linear-gradient(110deg, #1253e9, #7550ef); border: 0; border-left: 4px solid #d2ff38; border-radius: 10px 10px 0 0; }
+#lineup-dialog .squad-club strong { color: #fff; }
+#lineup-dialog .squad-club small, #lineup-dialog .squad-club > span:last-child > span { color: #d8eaff; }
+#lineup-dialog .squad-crest { color: #1143b6; background: #d2ff38; }
+#lineup-dialog .squad-balance span { color: #d8eaff; }
+#lineup-dialog .squad-balance strong { color: #d2ff38; }
+#lineup-dialog .lineup-preview { border-color: #c6d9f8; background: #e3efff; border-radius: 0 0 10px 10px; }
+#lineup-dialog .roster-heading { border-color: #1253e93d; }
+#lineup-dialog .roster-heading h3 { color: #17458f; }
+#lineup-dialog .roster-heading > span { color: #61799b; }
+#lineup-dialog .lineup-lists ol, #lineup-dialog .lineup-lists ul { scrollbar-color: #8eb3ee #edf4ff; }
+#lineup-dialog .lineup-lists li { color: #173463; background: #fff; border-color: #d5e3f8; border-left-color: #1253e9; border-radius: 7px; }
+#lineup-dialog .lineup-lists li:hover { background: #edf6ff; border-color: #94b8f0; }
+#lineup-dialog .roster-number { color: #1253e9; background: #e8f1ff; border-radius: 4px; }
+#lineup-dialog .roster-player b, #lineup-dialog .roster-name-button { color: #173463; }
+#lineup-dialog .roster-name-button:hover { color: #1253e9; }
+#lineup-dialog .roster-player small { color: #1253e9; background: #e8f1ff; border-radius: 3px; }
+#lineup-dialog li[data-role="keeper"] .roster-player small { color: #a85212; background: #fff0d9; }
+#lineup-dialog li[data-role="pace"] .roster-player small { color: #087585; background: #dff9fa; }
+#lineup-dialog li[data-role="spin"] .roster-player small { color: #7641cf; background: #f0e7ff; }
+#lineup-dialog .roster-ratings { color: #657b9b; }
+#lineup-dialog .lineup-lists .choice { color: #17458f; background: #edf4ff; border-color: #c7d9f4; border-radius: 4px; }
+#lineup-dialog .lineup-lists .choice:hover:not(:disabled) { color: #fff; background: #1253e9; border-color: #1253e9; }
+#lineup-dialog .roster-compare[aria-pressed="true"] { color: #fff; background: #1253e9; }
+#lineup-dialog .squad-tip { color: #536a8b; background: #eaf3ff; border-color: #1253e9; border-radius: 4px; }
+#lineup-dialog #lineup-status { color: #bb521b; }
+#lineup-dialog #lineup-status[data-ready="true"] { color: #08795d; }
+.squad-toolbar label { color: #536a8b; }
+.squad-toolbar select { color: #173463; background: #fff; border-color: #bed2ef; border-radius: 6px; }
+.squad-store-warning { color: #a86013; }
+
+/* Player workshop and comparison belong to the same match centre. */
+.player-editor, .squad-comparison { color-scheme: light; color: #173463; background: #f8fbff; border-color: #d5e3f8; border-top-color: #1253e9; border-radius: 12px; }
+.player-editor-heading { background: #f8fbff; border-color: #d5e3f8; }
+.player-editor-heading h2 { color: #173463; }
+.player-editor-heading .eyebrow { color: #1253e9; }
+.player-profile-hero { background: linear-gradient(105deg, #1253e9, #2381ed); }
+.profile-jersey { color: #fff; background: linear-gradient(100deg, #0943c8, #328df8 48%, #1253e9); }
+.profile-jersey::before { background: #d2ff38; }
+.profile-hero-copy h3 { color: #fff; }
+.profile-hero-copy p { color: #d2ff38; }
+.profile-hero-copy > span, .profile-rating-row small { color: #d8eeff; }
+.profile-rating-row b { color: #fff; }
+.profile-tabs { background: #eaf2ff; border-color: #cedef6; }
+.profile-tabs .profile-tab { color: #657b9b; }
+.profile-tabs .profile-tab[aria-pressed="true"] { color: #1253e9; border-color: #1253e9; background: #fff; }
+.profile-section-intro h3 { color: #173463; }
+.profile-section-intro p, .profile-style-note, .profile-footer small { color: #61799b; }
+.profile-field > span, .profile-appearance legend { color: #536a8b; }
+.profile-field input, .profile-field select { color: #173463; background: #fff; border-color: #bed2ef; }
+.profile-field input:focus, .profile-field select:focus { outline-color: #12bcdf; }
+.profile-swatch[aria-pressed="true"] { border-color: #1253e9; box-shadow: 0 0 0 3px #cde0ff; }
+.profile-errors { color: #c53e2a; }
+.profile-footer { background: #f8fbfff5; border-color: #d5e3f8; }
+.player-editor .primary, .squad-comparison > .primary { color: #fff; background: #1253e9; border-color: #1253e9; }
+.player-editor .secondary { color: #17458f; background: #edf4ff; border-color: #bfd3f1; }
+.profile-stat { background: #fff; border-color: #1253e9; border-radius: 7px; }
+.profile-stat span { color: #657b9b; }
+.profile-stat strong { color: #1253e9; }
+.profile-compare-table th, .profile-compare-table td { border-color: #d5e3f8; }
+.profile-compare-table thead { color: #1253e9; }
+.profile-compare-table tbody th { color: #657b9b; }
+
+/* Broadcast graphics: high contrast, full-colour cricket television. */
+.scoreboard { color: #fff; background: linear-gradient(105deg, #1253e9, #1042bd 55%, #1279dd); border-top-color: #32e4f2; border-left-color: #32e4f2; box-shadow: 0 -5px 20px #042d721a; }
+.broadcast-heading { color: #e0eeff; border-color: #b7d6ff40; }
+.broadcast-heading i { background: #d2ff38; box-shadow: 0 0 8px #d2ff3855; }
+.team-code { color: #08235b; background: #d2ff38; border-radius: 5px; }
+.score-main { border-left-color: #d2ff38; }
+#score { color: #fff; font-weight: 900; }
+.over small, .chase { color: #cfe8ff; }
+.free-hit { color: #d2ff38; }
+.batter-strip { border-color: #b7d6ff40; }
+.batter-strip b { color: #e0eeff; }
+.batter-strip strong { color: #fff; font-weight: 850; }
+.batter-strip .on-strike b { color: #d2ff38; }
+.batter-strip .on-strike::before { background: #d2ff38; }
+.score-stats, .score-footer { color: #e0eeff; border-color: #b7d6ff40; }
+.ribbon::before, #score-stats::before, #last-ball { color: #c5e2ff; }
+.ribbon span { color: #fff; background: #4a82eb; }
+.ribbon .major, .ribbon .boundary { color: #08235b; background: #d2ff38; }
+.ribbon .wicket { color: #fff; background: #e33d35; }
+.ribbon .pending-ball { background: transparent; border-color: #93baff88; color: #bfdfff; }
+#last-ball[data-event="boundary"] { color: #d2ff38; }
+#last-ball[data-event="wicket"] { color: #ffbfa3; }
+.bat-tools button, .game:not([data-view="home"]) .top-controls .utility,
+.duo-controls, .bowl-controls, .fielding-controls, .field-map-button, .timing {
+  color: #fff; background-color: #0b4bc9f0; border-color: #73bdff77;
+  box-shadow: 0 4px 15px #08275f22;
+}
+.field-map-button > span { color: #d1eaff; }
+.field-map-button small { color: #d2ff38; }
+#game:not([data-view="home"]) #pause-button { color: #fff; background: #1253e9; border-color: #60dbff; box-shadow: 0 4px 15px #08275f22; }
+#game:not([data-view="home"]) #pause-button:hover { background: #2675ff; border-color: #b0f6ff; }
+.countdown { color: #d2ff38; }
+.bat-tools button[aria-pressed="true"] { color: #08235b; background: #d2ff38; border-color: #d2ff38; }
+.bat-tools #defense-toggle[aria-pressed="true"] { color: #08235b; background: #32e4f2; border-color: #a4f8ff; }
+.timing-caption strong { color: #d2ff38; }
+.fielding-caption b { color: #d2ff38; }
+.fielding-controls p { color: #d1eaff; }
+.fielding-controls[data-action="hold"] { border-color: #d2ff38; }
+.duo-controls > span { color: #d1eaff; }
+.run-tracks i { background: linear-gradient(90deg, #32e4f2 var(--striker-run, 0%), #ffffff30 0); }
+.run-tracks i + i { background: linear-gradient(90deg, #d2ff38 var(--partner-run, 0%), #ffffff30 0); }
+.callout { color: #fff; border-left-color: #32e4f2; background: linear-gradient(105deg, #1253e9f2, #1253e9dc); border-radius: 8px; box-shadow: 0 7px 25px #032d6f2b; }
+.callout strong { color: #fff; font-weight: 850; font-style: italic; letter-spacing: .015em; }
+.callout > span, .callout > .call-kicker { color: #dcf2ff; }
+.callout[data-event="four"], .callout[data-event="six"] { border-color: #d2ff38; background: linear-gradient(110deg, #1253e9, #126de5); }
+.callout[data-event="four"] strong, .callout[data-event="six"] strong { color: #d2ff38; }
+.callout[data-event="wicket"] { border-color: #ffe34b; background: linear-gradient(110deg, #e94e25, #dc2645); }
+.callout[data-event="wicket"] strong, .callout[data-event="wicket"] .call-kicker { color: #fff; }
+.match-milestone { color: #d2ff38; border-color: #ffffff44; }
+.swipe-trail line { stroke: #32e4f2; filter: drop-shadow(0 0 7px #32e4f2); }
+.swipe-cue.now { color: #d2ff38; }
+
+/* A legible scorecard with real table contrast. */
+.scorecard-dialog, .scorecard-header { color: #173463; background: #f8fbff; }
+.scorecard-header { border-color: #d5e3f8; }
+.scorecard-header .eyebrow { color: #1253e9; }
+.scorecard-header h2 { color: #173463; font-weight: 850; }
+.innings-tabs button { color: #536a8b; background: #eaf2ff; border-color: #c8daf5; }
+.innings-tabs button[aria-pressed="true"] { color: #fff; background: #1253e9; border-color: #1253e9; }
+.scorecard-hero { color: #fff; background: linear-gradient(110deg, #1253e9, #118ce7); border-left-color: #d2ff38; border-radius: 10px; }
+.scorecard-team, .scorecard-figures span { color: #d8eeff; }
+.score-kicker { color: #d2ff38; }
+.scorecard-total { color: #fff; font-weight: 900; }
+.scorecard-figures b { color: #fff; }
+.scorecard-context { color: #3e648e; }
+.score-section h3 { color: #17458f; font-weight: 850; }
+.score-table-scroll { background: #fff; border-color: #d5e3f8; }
+.card-table thead { background: #e8f1ff; }
+.card-table th, .card-table td { color: #173463; border-color: #e0eafa; }
+.card-table thead th { color: #536a8b; }
+.card-table td:nth-child(2) { color: #536a8b; }
+.card-table tbody th { color: #173463; }
+.card-table tbody tr:nth-child(even) { background: #f8fbff; }
+.card-table tbody tr.active-batter { background: #e8f7ff; }
+.card-table tbody tr.active-batter th { border-left-color: #1253e9; color: #1253e9; }
+.extras-line, .score-empty { color: #657b9b; }
+.over-chart { border-color: #d5e3f8; }
+.over-bar, .over-bar b { color: #536a8b; }
+.over-bar i { background: #1253e9; }
+.over-bar i.with-wicket { background: #ff6c39; }
+.over-row { color: #173463; background: #edf4ff; border-color: #d5e3f8; }
+.over-row > b, .over-row > strong { color: #536a8b; }
+.over-balls span { border-color: #bed2ef; }
+.over-balls .major { color: #08235b; background: #d2ff38; border-color: #bddf35; }
+.over-balls .wicket { color: #fff; background: #e33d35; border-color: #e33d35; }
+.drs-row { color: #173463; background: #edf4ff; border-color: #d5e3f8; }
+.drs-row span { color: #536a8b; }
+.drs-row b { color: #173463; }
+#field-notice { color: #58708e; }
+
+@media (max-width: 650px) {
+  .quick-play-panel { border-radius: 11px; }
+  .mode-link { border-radius: 9px; }
+  .game[data-view="home"] .home-utilities button { min-height: 32px; }
+  .training-tile { border-radius: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button, .mode-link { transition: none; }
+  .mode-link:hover:not(:disabled) { transform: none; }
+}
